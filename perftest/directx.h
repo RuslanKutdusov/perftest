@@ -1,12 +1,19 @@
 #pragma once
 #include "datatypes.h"
-#include "com_ptr.h"
 #include <windows.h>
-#include <d3d11_1.h>
+#include <d3d12.h>
+#include <dxgi1_4.h>
 #include <vector>
 #include <array>
 #include <functional>
+#include <optional>
 #include <string>
+#include <wrl.h>
+#include <dxgidebug.h>
+#include <unordered_map>
+
+template<typename T>
+using ComPtr = Microsoft::WRL::ComPtr<T>;
 
 struct QueryHandle
 {
@@ -15,27 +22,93 @@ struct QueryHandle
 
 struct PerformanceQuery
 {
-	com_ptr<ID3D11Query> disjoint;
-	com_ptr<ID3D11Query> start;
-	com_ptr<ID3D11Query> end;
-
 	unsigned id;
 	std::string name;
 };
 
-std::vector<com_ptr<IDXGIAdapter>> enumerateAdapters();
+class SamplerState
+{
+public:
+	SamplerState() = default;
+	SamplerState(const D3D12_SAMPLER_DESC& samplerDesc)
+		: samplerDesc(samplerDesc)
+	{}
+
+	const D3D12_SAMPLER_DESC samplerDesc = {};
+};
+
+class ShaderResourceView
+{
+public:
+	ShaderResourceView() = default;
+	ShaderResourceView(ID3D12Resource* resource, std::optional<D3D12_SHADER_RESOURCE_VIEW_DESC> desc)
+		: resource(resource), desc(desc)
+	{}
+
+	ID3D12Resource* const resource = {};
+	const std::optional<D3D12_SHADER_RESOURCE_VIEW_DESC> desc = {};
+};
+
+class UnorderedAccessView
+{
+public:
+	UnorderedAccessView() = default;
+	UnorderedAccessView(ID3D12Resource* resource, std::optional<D3D12_UNORDERED_ACCESS_VIEW_DESC> desc)
+		: resource(resource), desc(desc)
+	{}
+
+	ID3D12Resource* const resource = {};
+	const std::optional<D3D12_UNORDERED_ACCESS_VIEW_DESC> desc = {};
+};
+
+class ComputePSO
+{
+public:
+	struct Binding
+	{
+		uint32_t rootParamIdx;
+		bool isRootDescriptor;
+		uint32_t descriptorOffset;
+	};
+
+	enum class EBindingType
+	{
+		kCbv = 0,
+		kSrv,
+		kUav,
+		kSampler,
+		kCount
+	};
+
+	struct RootParameter
+	{
+		D3D12_ROOT_PARAMETER_TYPE type;
+		uint32_t numDescriptors;
+		bool isSamplerDescriptorTable;
+	};
+
+	using RootSignatureDesc = std::vector<RootParameter>;
+
+	ComputePSO() = delete;
+	ComputePSO(ID3D12Device* device, const std::string& name, const std::vector<unsigned char>& shaderBytes);
+
+	ID3D12PipelineState* getPso() const { return pso.Get(); }
+	ID3D12RootSignature* getRootSignature() const { return rootSig.Get(); }
+	const RootSignatureDesc& getRootSignatureDesc() const { return rootSignatureDesc; }
+	const Binding* getBinding(uint32_t slot, EBindingType type) const;
+
+private:
+	ComPtr<ID3D12PipelineState> pso;
+	ComPtr<ID3D12RootSignature> rootSig;
+	RootSignatureDesc rootSignatureDesc;
+	std::unordered_map<uint32_t, Binding> bindings[(int)EBindingType::kCount];
+};
+
+std::vector<ComPtr<IDXGIAdapter>> enumerateAdapters();
 
 class DirectXDevice
 {
 public:
-
-	enum class BufferType
-	{
-		Default,
-		Structured,
-		ByteAddress
-	};
-
 	enum class SamplerType
 	{
 		Nearest,
@@ -44,49 +117,47 @@ public:
 	};
 
 	DirectXDevice(HWND window, uint2 resolution, IDXGIAdapter* adapter = nullptr);
+	~DirectXDevice();
 
 	// Create resources
-	ID3D11UnorderedAccessView* createBackBufferUAV();
-	ID3D11DepthStencilView* createDepthStencilView(uint2 size);
-	ID3D11RenderTargetView* DirectXDevice::createBackBufferRTV();
-	ID3D11ComputeShader* createComputeShader(const std::string& name, const std::vector<unsigned char>& shaderBytes);
+	ComputePSO createComputeShader(const std::string& name, const std::vector<unsigned char>& shaderBytes);
 
-	ID3D11Buffer* createConstantBuffer(unsigned bytes);
-	ID3D11Buffer* createBuffer(unsigned numElements, unsigned strideBytes, BufferType type = BufferType::Default);
-	ID3D11Texture2D* createTexture2d(uint2 dimensions, DXGI_FORMAT format, unsigned mips);
-	ID3D11Texture3D* createTexture3d(uint3 dimensions, DXGI_FORMAT format, unsigned mips);
-	ID3D11SamplerState* createSampler(SamplerType type);
+	ComPtr<ID3D12Resource> createConstantBuffer(unsigned bytes);
+	ComPtr<ID3D12Resource> createBuffer(unsigned numElements, unsigned strideBytes);
+	ComPtr<ID3D12Resource> createTexture2d(uint2 dimensions, DXGI_FORMAT format, unsigned mips);
+	ComPtr<ID3D12Resource> createTexture3d(uint3 dimensions, DXGI_FORMAT format, unsigned mips);
+	SamplerState createSampler(SamplerType type);
 
-	ID3D11UnorderedAccessView* createUAV(ID3D11Resource* resource);
-	ID3D11UnorderedAccessView* createTypedUAV(ID3D11Resource* buffer, unsigned numElements, DXGI_FORMAT format);
-	ID3D11UnorderedAccessView* createByteAddressUAV(ID3D11Resource* buffer, unsigned numElements);
+	UnorderedAccessView createUAV(ID3D12Resource* resource);
+	UnorderedAccessView createTypedUAV(ID3D12Resource* buffer, unsigned numElements, DXGI_FORMAT format);
+	UnorderedAccessView createByteAddressUAV(ID3D12Resource* buffer, unsigned numElements);
 
-	ID3D11ShaderResourceView* createSRV(ID3D11Resource* buffer);
-	ID3D11ShaderResourceView* createTypedSRV(ID3D11Resource* buffer, unsigned numElements, DXGI_FORMAT format);
-	ID3D11ShaderResourceView* createStructuredSRV(ID3D11Resource* buffer, unsigned numElements, unsigned stride);
-	ID3D11ShaderResourceView* createByteAddressSRV(ID3D11Resource* buffer, unsigned numElements);
+	ShaderResourceView createSRV(ID3D12Resource* resource);
+	ShaderResourceView createTypedSRV(ID3D12Resource* buffer, unsigned numElements, DXGI_FORMAT format);
+	ShaderResourceView createStructuredSRV(ID3D12Resource* buffer, unsigned numElements, unsigned stride);
+	ShaderResourceView createByteAddressSRV(ID3D12Resource* buffer, unsigned numElements);
 
 	// Data update
 	template <typename T>
-	void updateConstantBuffer(ID3D11Buffer* cbuffer, const T& cb)
+	void updateConstantBuffer(ID3D12Resource* cbuffer, const T& cb)
 	{
-		D3D11_MAPPED_SUBRESOURCE map;
-		deviceContext->Map(cbuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &map);
-		memcpy(map.pData, &cb, sizeof(cb));
-		deviceContext->Unmap(cbuffer, 0);
+		void* ptr = nullptr;
+		cbuffer->Map(0, nullptr, &ptr);
+		memcpy(ptr, &cb, sizeof(cb));
+		cbuffer->Unmap(0, nullptr);
 	}
 
 	// Commands
-	void clear(ID3D11RenderTargetView* rtv, const float4& color);
-	void clearDepth(ID3D11DepthStencilView *depthStencilView);
-	void setRenderTargets(std::initializer_list<ID3D11RenderTargetView*> rtvs, ID3D11DepthStencilView* depthStencilView);
-	void dispatch(ID3D11ComputeShader* shader, uint3 resolution, uint3 groupSize,
-					std::initializer_list<ID3D11Buffer*> cbs,
-					std::initializer_list<ID3D11ShaderResourceView*> srvs,
-					std::initializer_list<ID3D11UnorderedAccessView*> uavs = {},
-					std::initializer_list<ID3D11SamplerState*> samplers = {});
+	void beginFrame();
+	void dispatch(
+		const ComputePSO& shader,
+		uint3 resolution,
+		uint3 groupSize,
+		std::initializer_list<ID3D12Resource*> cbs,
+		std::initializer_list<const ShaderResourceView*> srvs,
+		std::initializer_list<const UnorderedAccessView*> uavs = {},
+		std::initializer_list<const SamplerState*> samplers = {});
 	void presentFrame();
-	void clearUAV(ID3D11UnorderedAccessView* uav, std::array<float, 4> color);
 
 	// Performance querys
 	QueryHandle startPerformanceQuery(unsigned id, const std::string& name);
@@ -96,8 +167,8 @@ public:
 	// Device and window
 	HWND getWindowHandle() { return windowHandle; }
 	uint2 getResolution() { return resolution; }
-	ID3D11Device* getDevice() { return device; }
-	ID3D11DeviceContext* getDeviceContext() { return deviceContext; }
+	ID3D12Device* getDevice() { return device.Get(); }
+	ID3D12GraphicsCommandList* getCmdList() { return cmdList.Get(); }
 
 private:
 
@@ -106,13 +177,24 @@ private:
 	uint2 resolution;
 
 	// DirectX
-	com_ptr<IDXGISwapChain> swapChain;
-	com_ptr<ID3D11Device> device;
-	com_ptr<ID3D11DeviceContext> deviceContext;
-	com_ptr<ID3DUserDefinedAnnotation> userDefinedAnnotation;
+	ComPtr<ID3D12Debug1> debugInterface;
+	ComPtr<IDXGISwapChain1> swapChain;
+	ComPtr<ID3D12Device> device;
+	ComPtr<ID3D12CommandQueue> cmdQueue;
+	ComPtr<ID3D12Fence> fence;
+	HANDLE fenceEvent;
+	UINT64 fenceLastSignalVal;
+	ComPtr<ID3D12GraphicsCommandList> cmdList;
+	ComPtr<ID3D12CommandAllocator> cmdAllocator;
+	ComPtr<ID3D12QueryHeap> queryHeap;
+	ComPtr<ID3D12Resource> queryResultBuffer;
+	ComPtr<ID3D12DescriptorHeap> cbvSrvUavDescriptorHeap;
+	ComPtr<ID3D12DescriptorHeap> samplerDescriptorHeap;
+	uint32_t cbvSrvUavDescriptorHeapOffset = 0;
+	uint32_t samplerDescriptorHeapOffset = 0;
 
 	// Queries
 	std::array<PerformanceQuery, 4096> queries;
 	unsigned queryCounter = 0;
-	unsigned queryProcessCounter = 0;
+	unsigned frameFirstQuery = 0;
 };

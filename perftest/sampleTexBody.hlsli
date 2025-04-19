@@ -8,10 +8,18 @@ cbuffer CB0 : register(b0)
 	LoadConstants loadConstants;
 };
 
+#define ROOT_SIGNATURE \
+	"DescriptorTable(" \
+		"CBV(b0, flags = DESCRIPTORS_VOLATILE | DATA_VOLATILE),"\
+		"SRV(t0, flags = DESCRIPTORS_VOLATILE | DATA_VOLATILE),"\
+		"UAV(u0, flags = DESCRIPTORS_VOLATILE | DATA_VOLATILE)),"\
+	"DescriptorTable(Sampler(s0))"
+
 #define THREAD_GROUP_DIM 16
 
 groupshared float dummyLDS[THREAD_GROUP_DIM][THREAD_GROUP_DIM];
 
+[RootSignature(ROOT_SIGNATURE)]
 [numthreads(THREAD_GROUP_DIM, THREAD_GROUP_DIM, 1)]
 void main(uint3 tid : SV_DispatchThreadID, uint3 gid : SV_GroupThreadID)
 {

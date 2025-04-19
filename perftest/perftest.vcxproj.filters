@@ -249,5 +249,6 @@
     <None Include="sampleTexBody.hlsli">
       <Filter>Shaders\texture_sample</Filter>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

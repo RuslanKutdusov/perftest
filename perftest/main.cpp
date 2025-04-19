@@ -8,29 +8,29 @@
 class BenchTest
 {
 public:
-	BenchTest(DirectXDevice& dx, ID3D11UnorderedAccessView* output) : dx(dx), output(output), testCaseNumber(0)
+	BenchTest(DirectXDevice& dx, const UnorderedAccessView& output) : dx(dx), output(output), testCaseNumber(0)
 	{
 	}
 
-	void testCase(ID3D11ComputeShader* shader, ID3D11Buffer* cb, ID3D11ShaderResourceView* source, const std::string& name)
+	void testCase(ComputePSO& shader, ID3D12Resource* cb, const ShaderResourceView& source, const std::string& name)
 	{
 		const uint3 workloadThreadCount(1024, 1024, 1);
 		const uint3 workloadGroupSize(256, 1, 1);
 
 		QueryHandle query = dx.startPerformanceQuery(testCaseNumber, name);
-		dx.dispatch(shader, workloadThreadCount, workloadGroupSize, { cb }, { source }, { output }, {});
+		dx.dispatch(shader, workloadThreadCount, workloadGroupSize, { cb }, { &source }, { &output }, {});
 		dx.endPerformanceQuery(query);
 
 		testCaseNumber++;
 	}
 
-	void testCaseWithSampler(ID3D11ComputeShader* shader, ID3D11Buffer* cb, ID3D11ShaderResourceView* source, ID3D11SamplerState* sampler, const std::string& name)
+	void testCaseWithSampler(ComputePSO& shader, ID3D12Resource* cb, const ShaderResourceView& source, const SamplerState& sampler, const std::string& name)
 	{
 		const uint3 workloadThreadCount(1024, 1024, 1);
 		const uint3 workloadGroupSize(256, 1, 1);
 
 		QueryHandle query = dx.startPerformanceQuery(testCaseNumber, name);
-		dx.dispatch(shader, workloadThreadCount, workloadGroupSize, { cb }, { source }, { output }, { sampler });
+		dx.dispatch(shader, workloadThreadCount, workloadGroupSize, { cb }, { &source }, { &output }, { &sampler });
 		dx.endPerformanceQuery(query);
 
 		testCaseNumber++;
@@ -38,7 +38,7 @@ public:
 
 private:
 	DirectXDevice& dx;
-	ID3D11UnorderedAccessView* output;
+	const UnorderedAccessView& output;
 	unsigned testCaseNumber;
 };
 
@@ -46,7 +46,7 @@ private:
 int main(int argc, char *argv[])
 {
 	// Enumerate adapters
-	std::vector<com_ptr<IDXGIAdapter>> adapters = enumerateAdapters();
+	std::vector<ComPtr<IDXGIAdapter>> adapters = enumerateAdapters();
 	printf("PerfTest\nTo select adapter, use: PerfTest.exe [ADAPTER_INDEX]\n\n");
 	printf("Adapters found:\n");
 	int index = 0;
@@ -69,135 +69,136 @@ int main(int argc, char *argv[])
 	// Init systems
 	uint2 resolution(256, 256);
 	HWND window = createWindow(resolution);
-	DirectXDevice dx(window, resolution, adapters[selectedAdapterIdx]);
+	DirectXDevice dx(window, resolution, adapters[selectedAdapterIdx].Get());
 
 	// Load shaders 
-	com_ptr<ID3D11ComputeShader> shaderLoadTyped1dInvariant = loadComputeShader(dx, "shaders/loadTyped1dInvariant.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadTyped1dLinear = loadComputeShader(dx, "shaders/loadTyped1dLinear.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadTyped1dRandom = loadComputeShader(dx, "shaders/loadTyped1dRandom.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadTyped2dInvariant = loadComputeShader(dx, "shaders/loadTyped2dInvariant.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadTyped2dLinear = loadComputeShader(dx, "shaders/loadTyped2dLinear.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadTyped2dRandom = loadComputeShader(dx, "shaders/loadTyped2dRandom.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadTyped4dInvariant = loadComputeShader(dx, "shaders/loadTyped4dInvariant.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadTyped4dLinear = loadComputeShader(dx, "shaders/loadTyped4dLinear.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadTyped4dRandom = loadComputeShader(dx, "shaders/loadTyped4dRandom.cso");
+	printf("Loading shaders...");
+	ComputePSO shaderLoadTyped1dInvariant = loadComputeShader(dx, "shaders/loadTyped1dInvariant.cso");
+	ComputePSO shaderLoadTyped1dLinear = loadComputeShader(dx, "shaders/loadTyped1dLinear.cso");
+	ComputePSO shaderLoadTyped1dRandom = loadComputeShader(dx, "shaders/loadTyped1dRandom.cso");
+	ComputePSO shaderLoadTyped2dInvariant = loadComputeShader(dx, "shaders/loadTyped2dInvariant.cso");
+	ComputePSO shaderLoadTyped2dLinear = loadComputeShader(dx, "shaders/loadTyped2dLinear.cso");
+	ComputePSO shaderLoadTyped2dRandom = loadComputeShader(dx, "shaders/loadTyped2dRandom.cso");
+	ComputePSO shaderLoadTyped4dInvariant = loadComputeShader(dx, "shaders/loadTyped4dInvariant.cso");
+	ComputePSO shaderLoadTyped4dLinear = loadComputeShader(dx, "shaders/loadTyped4dLinear.cso");
+	ComputePSO shaderLoadTyped4dRandom = loadComputeShader(dx, "shaders/loadTyped4dRandom.cso");
 
-	com_ptr<ID3D11ComputeShader> shaderLoadRaw1dInvariant = loadComputeShader(dx, "shaders/loadRaw1dInvariant.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadRaw1dLinear = loadComputeShader(dx, "shaders/loadRaw1dLinear.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadRaw1dRandom = loadComputeShader(dx, "shaders/loadRaw1dRandom.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadRaw2dInvariant = loadComputeShader(dx, "shaders/loadRaw2dInvariant.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadRaw2dLinear = loadComputeShader(dx, "shaders/loadRaw2dLinear.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadRaw2dRandom = loadComputeShader(dx, "shaders/loadRaw2dRandom.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadRaw3dInvariant = loadComputeShader(dx, "shaders/loadRaw3dInvariant.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadRaw3dLinear = loadComputeShader(dx, "shaders/loadRaw3dLinear.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadRaw3dRandom = loadComputeShader(dx, "shaders/loadRaw3dRandom.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadRaw4dInvariant = loadComputeShader(dx, "shaders/loadRaw4dInvariant.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadRaw4dLinear = loadComputeShader(dx, "shaders/loadRaw4dLinear.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadRaw4dRandom = loadComputeShader(dx, "shaders/loadRaw4dRandom.cso");
+	ComputePSO shaderLoadRaw1dInvariant = loadComputeShader(dx, "shaders/loadRaw1dInvariant.cso");
+	ComputePSO shaderLoadRaw1dLinear = loadComputeShader(dx, "shaders/loadRaw1dLinear.cso");
+	ComputePSO shaderLoadRaw1dRandom = loadComputeShader(dx, "shaders/loadRaw1dRandom.cso");
+	ComputePSO shaderLoadRaw2dInvariant = loadComputeShader(dx, "shaders/loadRaw2dInvariant.cso");
+	ComputePSO shaderLoadRaw2dLinear = loadComputeShader(dx, "shaders/loadRaw2dLinear.cso");
+	ComputePSO shaderLoadRaw2dRandom = loadComputeShader(dx, "shaders/loadRaw2dRandom.cso");
+	ComputePSO shaderLoadRaw3dInvariant = loadComputeShader(dx, "shaders/loadRaw3dInvariant.cso");
+	ComputePSO shaderLoadRaw3dLinear = loadComputeShader(dx, "shaders/loadRaw3dLinear.cso");
+	ComputePSO shaderLoadRaw3dRandom = loadComputeShader(dx, "shaders/loadRaw3dRandom.cso");
+	ComputePSO shaderLoadRaw4dInvariant = loadComputeShader(dx, "shaders/loadRaw4dInvariant.cso");
+	ComputePSO shaderLoadRaw4dLinear = loadComputeShader(dx, "shaders/loadRaw4dLinear.cso");
+	ComputePSO shaderLoadRaw4dRandom = loadComputeShader(dx, "shaders/loadRaw4dRandom.cso");
 
-	com_ptr<ID3D11ComputeShader> shaderLoadTex1dInvariant = loadComputeShader(dx, "shaders/loadTex1dInvariant.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadTex1dLinear = loadComputeShader(dx, "shaders/loadTex1dLinear.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadTex1dRandom = loadComputeShader(dx, "shaders/loadTex1dRandom.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadTex2dInvariant = loadComputeShader(dx, "shaders/loadTex2dInvariant.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadTex2dLinear = loadComputeShader(dx, "shaders/loadTex2dLinear.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadTex2dRandom = loadComputeShader(dx, "shaders/loadTex2dRandom.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadTex4dInvariant = loadComputeShader(dx, "shaders/loadTex4dInvariant.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadTex4dLinear = loadComputeShader(dx, "shaders/loadTex4dLinear.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadTex4dRandom = loadComputeShader(dx, "shaders/loadTex4dRandom.cso");
+	ComputePSO shaderLoadTex1dInvariant = loadComputeShader(dx, "shaders/loadTex1dInvariant.cso");
+	ComputePSO shaderLoadTex1dLinear = loadComputeShader(dx, "shaders/loadTex1dLinear.cso");
+	ComputePSO shaderLoadTex1dRandom = loadComputeShader(dx, "shaders/loadTex1dRandom.cso");
+	ComputePSO shaderLoadTex2dInvariant = loadComputeShader(dx, "shaders/loadTex2dInvariant.cso");
+	ComputePSO shaderLoadTex2dLinear = loadComputeShader(dx, "shaders/loadTex2dLinear.cso");
+	ComputePSO shaderLoadTex2dRandom = loadComputeShader(dx, "shaders/loadTex2dRandom.cso");
+	ComputePSO shaderLoadTex4dInvariant = loadComputeShader(dx, "shaders/loadTex4dInvariant.cso");
+	ComputePSO shaderLoadTex4dLinear = loadComputeShader(dx, "shaders/loadTex4dLinear.cso");
+	ComputePSO shaderLoadTex4dRandom = loadComputeShader(dx, "shaders/loadTex4dRandom.cso");
 
-	com_ptr<ID3D11ComputeShader> shaderSampleTex1dInvariant = loadComputeShader(dx, "shaders/sampleTex1dInvariant.cso");
-	com_ptr<ID3D11ComputeShader> shaderSampleTex1dLinear = loadComputeShader(dx, "shaders/sampleTex1dLinear.cso");
-	com_ptr<ID3D11ComputeShader> shaderSampleTex1dRandom = loadComputeShader(dx, "shaders/sampleTex1dRandom.cso");
-	com_ptr<ID3D11ComputeShader> shaderSampleTex2dInvariant = loadComputeShader(dx, "shaders/sampleTex2dInvariant.cso");
-	com_ptr<ID3D11ComputeShader> shaderSampleTex2dLinear = loadComputeShader(dx, "shaders/sampleTex2dLinear.cso");
-	com_ptr<ID3D11ComputeShader> shaderSampleTex2dRandom = loadComputeShader(dx, "shaders/sampleTex2dRandom.cso");
-	com_ptr<ID3D11ComputeShader> shaderSampleTex4dInvariant = loadComputeShader(dx, "shaders/sampleTex4dInvariant.cso");
-	com_ptr<ID3D11ComputeShader> shaderSampleTex4dLinear = loadComputeShader(dx, "shaders/sampleTex4dLinear.cso");
-	com_ptr<ID3D11ComputeShader> shaderSampleTex4dRandom = loadComputeShader(dx, "shaders/sampleTex4dRandom.cso");
+	ComputePSO shaderSampleTex1dInvariant = loadComputeShader(dx, "shaders/sampleTex1dInvariant.cso");
+	ComputePSO shaderSampleTex1dLinear = loadComputeShader(dx, "shaders/sampleTex1dLinear.cso");
+	ComputePSO shaderSampleTex1dRandom = loadComputeShader(dx, "shaders/sampleTex1dRandom.cso");
+	ComputePSO shaderSampleTex2dInvariant = loadComputeShader(dx, "shaders/sampleTex2dInvariant.cso");
+	ComputePSO shaderSampleTex2dLinear = loadComputeShader(dx, "shaders/sampleTex2dLinear.cso");
+	ComputePSO shaderSampleTex2dRandom = loadComputeShader(dx, "shaders/sampleTex2dRandom.cso");
+	ComputePSO shaderSampleTex4dInvariant = loadComputeShader(dx, "shaders/sampleTex4dInvariant.cso");
+	ComputePSO shaderSampleTex4dLinear = loadComputeShader(dx, "shaders/sampleTex4dLinear.cso");
+	ComputePSO shaderSampleTex4dRandom = loadComputeShader(dx, "shaders/sampleTex4dRandom.cso");
 
-	com_ptr<ID3D11ComputeShader> shaderLoadConstant4dInvariant = loadComputeShader(dx, "shaders/loadConstant4dInvariant.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadConstant4dLinear = loadComputeShader(dx, "shaders/loadConstant4dLinear.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadConstant4dRandom = loadComputeShader(dx, "shaders/loadConstant4dRandom.cso");
+	ComputePSO shaderLoadConstant4dInvariant = loadComputeShader(dx, "shaders/loadConstant4dInvariant.cso");
+	ComputePSO shaderLoadConstant4dLinear = loadComputeShader(dx, "shaders/loadConstant4dLinear.cso");
+	ComputePSO shaderLoadConstant4dRandom = loadComputeShader(dx, "shaders/loadConstant4dRandom.cso");
 
-	com_ptr<ID3D11ComputeShader> shaderLoadStructured1dInvariant = loadComputeShader(dx, "shaders/loadStructured1dInvariant.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadStructured1dLinear = loadComputeShader(dx, "shaders/loadStructured1dLinear.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadStructured1dRandom = loadComputeShader(dx, "shaders/loadStructured1dRandom.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadStructured2dInvariant = loadComputeShader(dx, "shaders/loadStructured2dInvariant.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadStructured2dLinear = loadComputeShader(dx, "shaders/loadStructured2dLinear.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadStructured2dRandom = loadComputeShader(dx, "shaders/loadStructured2dRandom.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadStructured4dInvariant = loadComputeShader(dx, "shaders/loadStructured4dInvariant.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadStructured4dLinear = loadComputeShader(dx, "shaders/loadStructured4dLinear.cso");
-	com_ptr<ID3D11ComputeShader> shaderLoadStructured4dRandom = loadComputeShader(dx, "shaders/loadStructured4dRandom.cso");
-
+	ComputePSO shaderLoadStructured1dInvariant = loadComputeShader(dx, "shaders/loadStructured1dInvariant.cso");
+	ComputePSO shaderLoadStructured1dLinear = loadComputeShader(dx, "shaders/loadStructured1dLinear.cso");
+	ComputePSO shaderLoadStructured1dRandom = loadComputeShader(dx, "shaders/loadStructured1dRandom.cso");
+	ComputePSO shaderLoadStructured2dInvariant = loadComputeShader(dx, "shaders/loadStructured2dInvariant.cso");
+	ComputePSO shaderLoadStructured2dLinear = loadComputeShader(dx, "shaders/loadStructured2dLinear.cso");
+	ComputePSO shaderLoadStructured2dRandom = loadComputeShader(dx, "shaders/loadStructured2dRandom.cso");
+	ComputePSO shaderLoadStructured4dInvariant = loadComputeShader(dx, "shaders/loadStructured4dInvariant.cso");
+	ComputePSO shaderLoadStructured4dLinear = loadComputeShader(dx, "shaders/loadStructured4dLinear.cso");
+	ComputePSO shaderLoadStructured4dRandom = loadComputeShader(dx, "shaders/loadStructured4dRandom.cso");
+	printf(" Done\n");
 	// Create buffers and output UAV
-	com_ptr<ID3D11Buffer> bufferOutput = dx.createBuffer(2048, 4, DirectXDevice::BufferType::ByteAddress);
-	com_ptr<ID3D11Buffer> bufferInput = dx.createBuffer(1024, 16, DirectXDevice::BufferType::ByteAddress);
-	com_ptr<ID3D11Buffer> bufferInputStructured4 = dx.createBuffer(1024, 4, DirectXDevice::BufferType::Structured);
-	com_ptr<ID3D11Buffer> bufferInputStructured8 = dx.createBuffer(1024, 8, DirectXDevice::BufferType::Structured);
-	com_ptr<ID3D11Buffer> bufferInputStructured16 = dx.createBuffer(1024, 16, DirectXDevice::BufferType::Structured);
-	com_ptr<ID3D11UnorderedAccessView> outputUAV = dx.createTypedUAV(bufferOutput, 2048, DXGI_FORMAT_R32_FLOAT);
+	ComPtr<ID3D12Resource> bufferOutput = dx.createBuffer(2048, 4);
+	ComPtr<ID3D12Resource> bufferInput = dx.createBuffer(1024, 16);
+	ComPtr<ID3D12Resource> bufferInputStructured4 = dx.createBuffer(1024, 4);
+	ComPtr<ID3D12Resource> bufferInputStructured8 = dx.createBuffer(1024, 8);
+	ComPtr<ID3D12Resource> bufferInputStructured16 = dx.createBuffer(1024, 16);
+	UnorderedAccessView outputUAV = dx.createTypedUAV(bufferOutput.Get(), 2048, DXGI_FORMAT_R32_FLOAT);
 
 	// SRVs for benchmarking different buffer view formats/types
-	com_ptr<ID3D11ShaderResourceView> typedSRV_R8 = dx.createTypedSRV(bufferInput, 1024, DXGI_FORMAT_R8_UNORM);
-	com_ptr<ID3D11ShaderResourceView> typedSRV_R16F = dx.createTypedSRV(bufferInput, 1024, DXGI_FORMAT_R16_FLOAT);
-	com_ptr<ID3D11ShaderResourceView> typedSRV_R32F = dx.createTypedSRV(bufferInput, 1024, DXGI_FORMAT_R32_FLOAT);
-	com_ptr<ID3D11ShaderResourceView> typedSRV_RG8 = dx.createTypedSRV(bufferInput, 1024, DXGI_FORMAT_R8G8_UNORM);
-	com_ptr<ID3D11ShaderResourceView> typedSRV_RG16F = dx.createTypedSRV(bufferInput, 1024, DXGI_FORMAT_R16G16_FLOAT);
-	com_ptr<ID3D11ShaderResourceView> typedSRV_RG32F = dx.createTypedSRV(bufferInput, 1024, DXGI_FORMAT_R32G32_FLOAT);
-	com_ptr<ID3D11ShaderResourceView> typedSRV_RGBA8 = dx.createTypedSRV(bufferInput, 1024, DXGI_FORMAT_R8G8B8A8_UNORM);
-	com_ptr<ID3D11ShaderResourceView> typedSRV_RGBA16F = dx.createTypedSRV(bufferInput, 1024, DXGI_FORMAT_R16G16B16A16_FLOAT);
-	com_ptr<ID3D11ShaderResourceView> typedSRV_RGBA32F = dx.createTypedSRV(bufferInput, 1024, DXGI_FORMAT_R32G32B32A32_FLOAT);
-	com_ptr<ID3D11ShaderResourceView> structuredSRV_R32F = dx.createStructuredSRV(bufferInputStructured4, 1024, 4);
-	com_ptr<ID3D11ShaderResourceView> structuredSRV_RG32F = dx.createStructuredSRV(bufferInputStructured8, 1024, 8);
-	com_ptr<ID3D11ShaderResourceView> structuredSRV_RGBA32F = dx.createStructuredSRV(bufferInputStructured16, 1024, 16);
-	com_ptr<ID3D11ShaderResourceView> byteAddressSRV = dx.createByteAddressSRV(bufferInput, 1024);
+	ShaderResourceView typedSRV_R8 = dx.createTypedSRV(bufferInput.Get(), 1024, DXGI_FORMAT_R8_UNORM);
+	ShaderResourceView typedSRV_R16F = dx.createTypedSRV(bufferInput.Get(), 1024, DXGI_FORMAT_R16_FLOAT);
+	ShaderResourceView typedSRV_R32F = dx.createTypedSRV(bufferInput.Get(), 1024, DXGI_FORMAT_R32_FLOAT);
+	ShaderResourceView typedSRV_RG8 = dx.createTypedSRV(bufferInput.Get(), 1024, DXGI_FORMAT_R8G8_UNORM);
+	ShaderResourceView typedSRV_RG16F = dx.createTypedSRV(bufferInput.Get(), 1024, DXGI_FORMAT_R16G16_FLOAT);
+	ShaderResourceView typedSRV_RG32F = dx.createTypedSRV(bufferInput.Get(), 1024, DXGI_FORMAT_R32G32_FLOAT);
+	ShaderResourceView typedSRV_RGBA8 = dx.createTypedSRV(bufferInput.Get(), 1024, DXGI_FORMAT_R8G8B8A8_UNORM);
+	ShaderResourceView typedSRV_RGBA16F = dx.createTypedSRV(bufferInput.Get(), 1024, DXGI_FORMAT_R16G16B16A16_FLOAT);
+	ShaderResourceView typedSRV_RGBA32F = dx.createTypedSRV(bufferInput.Get(), 1024, DXGI_FORMAT_R32G32B32A32_FLOAT);
+	ShaderResourceView structuredSRV_R32F = dx.createStructuredSRV(bufferInputStructured4.Get(), 1024, 4);
+	ShaderResourceView structuredSRV_RG32F = dx.createStructuredSRV(bufferInputStructured8.Get(), 1024, 8);
+	ShaderResourceView structuredSRV_RGBA32F = dx.createStructuredSRV(bufferInputStructured16.Get(), 1024, 16);
+	ShaderResourceView byteAddressSRV = dx.createByteAddressSRV(bufferInput.Get(), 1024);
 
 	// Create input textures
-	com_ptr<ID3D11Texture2D> texR8 = dx.createTexture2d(uint2(32, 32), DXGI_FORMAT_R8_UNORM, 1);
-	com_ptr<ID3D11Texture2D> texR16F = dx.createTexture2d(uint2(32, 32), DXGI_FORMAT_R16_FLOAT, 1);
-	com_ptr<ID3D11Texture2D> texR32F = dx.createTexture2d(uint2(32, 32), DXGI_FORMAT_R32_FLOAT, 1);
-	com_ptr<ID3D11Texture2D> texRG8 = dx.createTexture2d(uint2(32, 32), DXGI_FORMAT_R8G8_UNORM, 1);
-	com_ptr<ID3D11Texture2D> texRG16F = dx.createTexture2d(uint2(32, 32), DXGI_FORMAT_R16G16_FLOAT, 1);
-	com_ptr<ID3D11Texture2D> texRG32F = dx.createTexture2d(uint2(32, 32), DXGI_FORMAT_R32G32_FLOAT, 1);
-	com_ptr<ID3D11Texture2D> texRGBA8 = dx.createTexture2d(uint2(32, 32), DXGI_FORMAT_R8G8B8A8_UNORM, 1);
-	com_ptr<ID3D11Texture2D> texRGBA16F = dx.createTexture2d(uint2(32, 32), DXGI_FORMAT_R16G16B16A16_FLOAT, 1);
-	com_ptr<ID3D11Texture2D> texRGBA32F = dx.createTexture2d(uint2(32, 32), DXGI_FORMAT_R32G32B32A32_FLOAT, 1);
-
+	ComPtr<ID3D12Resource> texR8 = dx.createTexture2d(uint2(32, 32), DXGI_FORMAT_R8_UNORM, 1);
+	ComPtr<ID3D12Resource> texR16F = dx.createTexture2d(uint2(32, 32), DXGI_FORMAT_R16_FLOAT, 1);
+	ComPtr<ID3D12Resource> texR32F = dx.createTexture2d(uint2(32, 32), DXGI_FORMAT_R32_FLOAT, 1);
+	ComPtr<ID3D12Resource> texRG8 = dx.createTexture2d(uint2(32, 32), DXGI_FORMAT_R8G8_UNORM, 1);
+	ComPtr<ID3D12Resource> texRG16F = dx.createTexture2d(uint2(32, 32), DXGI_FORMAT_R16G16_FLOAT, 1);
+	ComPtr<ID3D12Resource> texRG32F = dx.createTexture2d(uint2(32, 32), DXGI_FORMAT_R32G32_FLOAT, 1);
+	ComPtr<ID3D12Resource> texRGBA8 = dx.createTexture2d(uint2(32, 32), DXGI_FORMAT_R8G8B8A8_UNORM, 1);
+	ComPtr<ID3D12Resource> texRGBA16F = dx.createTexture2d(uint2(32, 32), DXGI_FORMAT_R16G16B16A16_FLOAT, 1);
+	ComPtr<ID3D12Resource> texRGBA32F = dx.createTexture2d(uint2(32, 32), DXGI_FORMAT_R32G32B32A32_FLOAT, 1);
+	
 	// Texture SRVs
-	com_ptr<ID3D11ShaderResourceView> texSRV_R8 = dx.createSRV(texR8);
-	com_ptr<ID3D11ShaderResourceView> texSRV_R16F = dx.createSRV(texR16F);
-	com_ptr<ID3D11ShaderResourceView> texSRV_R32F = dx.createSRV(texR32F);
-	com_ptr<ID3D11ShaderResourceView> texSRV_RG8 = dx.createSRV(texRG8);
-	com_ptr<ID3D11ShaderResourceView> texSRV_RG16F = dx.createSRV(texRG16F);
-	com_ptr<ID3D11ShaderResourceView> texSRV_RG32F = dx.createSRV(texRG32F);
-	com_ptr<ID3D11ShaderResourceView> texSRV_RGBA8 = dx.createSRV(texRGBA8);
-	com_ptr<ID3D11ShaderResourceView> texSRV_RGBA16F = dx.createSRV(texRGBA16F);
-	com_ptr<ID3D11ShaderResourceView> texSRV_RGBA32F = dx.createSRV(texRGBA32F);
+	ShaderResourceView texSRV_R8 = dx.createSRV(texR8.Get());
+	ShaderResourceView texSRV_R16F = dx.createSRV(texR16F.Get());
+	ShaderResourceView texSRV_R32F = dx.createSRV(texR32F.Get());
+	ShaderResourceView texSRV_RG8 = dx.createSRV(texRG8.Get());
+	ShaderResourceView texSRV_RG16F = dx.createSRV(texRG16F.Get());
+	ShaderResourceView texSRV_RG32F = dx.createSRV(texRG32F.Get());
+	ShaderResourceView texSRV_RGBA8 = dx.createSRV(texRGBA8.Get());
+	ShaderResourceView texSRV_RGBA16F = dx.createSRV(texRGBA16F.Get());
+	ShaderResourceView texSRV_RGBA32F = dx.createSRV(texRGBA32F.Get());
 
 	// Samplers
-	com_ptr<ID3D11SamplerState> samplerNearest = dx.createSampler(DirectXDevice::SamplerType::Nearest);
-	com_ptr<ID3D11SamplerState> samplerBilinear = dx.createSampler(DirectXDevice::SamplerType::Bilinear);
-	com_ptr<ID3D11SamplerState> samplerTrilinear = dx.createSampler(DirectXDevice::SamplerType::Trilinear);
+	SamplerState samplerNearest = dx.createSampler(DirectXDevice::SamplerType::Nearest);
+	SamplerState samplerBilinear = dx.createSampler(DirectXDevice::SamplerType::Bilinear);
+	SamplerState samplerTrilinear = dx.createSampler(DirectXDevice::SamplerType::Trilinear);
 
 	// Setup the constant buffer
 	LoadConstants loadConstants;
-	com_ptr<ID3D11Buffer> loadCB = dx.createConstantBuffer(sizeof(LoadConstants));
-	com_ptr<ID3D11Buffer> loadCBUnaligned = dx.createConstantBuffer(sizeof(LoadConstants));
+	ComPtr<ID3D12Resource> loadCB = dx.createConstantBuffer(sizeof(LoadConstants));
+	ComPtr<ID3D12Resource> loadCBUnaligned = dx.createConstantBuffer(sizeof(LoadConstants));
 	loadConstants.elementsMask = 0;				// Dummy mask to prevent unwanted compiler optimizations
 	loadConstants.writeIndex = 0xffffffff;		// Never write
 	loadConstants.readStartAddress = 0;			// Aligned
-	dx.updateConstantBuffer(loadCB, loadConstants);
+	dx.updateConstantBuffer(loadCB.Get(), loadConstants);
 	loadConstants.readStartAddress = 4;			// Unaligned
-	dx.updateConstantBuffer(loadCBUnaligned, loadConstants);
+	dx.updateConstantBuffer(loadCBUnaligned.Get(), loadConstants);
 	
 	// Setup constant buffer with float4 array for constant buffer load benchmarking
 	LoadConstantsWithArray loadConstantsWithArray;
-	com_ptr<ID3D11Buffer> loadWithArrayCB = dx.createConstantBuffer(sizeof(LoadConstantsWithArray));
+	ComPtr<ID3D12Resource> loadWithArrayCB = dx.createConstantBuffer(sizeof(LoadConstantsWithArray));
 	loadConstantsWithArray.elementsMask = 0;				// Dummy mask to prevent unwanted compiler optimizations
 	loadConstantsWithArray.writeIndex = 0xffffffff;			// Never write
 	loadConstantsWithArray.readStartAddress = 0;			// Aligned
 	memset(loadConstantsWithArray.benchmarkArray, 0, sizeof(loadConstantsWithArray.benchmarkArray));
-	dx.updateConstantBuffer(loadWithArrayCB, loadConstantsWithArray);
+	dx.updateConstantBuffer(loadWithArrayCB.Get(), loadConstantsWithArray);
 
 	const unsigned numWarmUpFramesBeforeBenchmark = 30;
 	const unsigned numBenchmarkFrames = 30;
@@ -232,161 +233,163 @@ int main(int argc, char *argv[])
 			}
 		});
 
+		dx.beginFrame();
+
 		BenchTest bench(dx, outputUAV);
 
-		bench.testCase(shaderLoadTyped1dInvariant, loadCB, typedSRV_R8, "Buffer<R8>.Load uniform");
-		bench.testCase(shaderLoadTyped1dLinear, loadCB, typedSRV_R8, "Buffer<R8>.Load linear");
-		bench.testCase(shaderLoadTyped1dRandom, loadCB, typedSRV_R8, "Buffer<R8>.Load random");
-		bench.testCase(shaderLoadTyped2dInvariant, loadCB, typedSRV_RG8, "Buffer<RG8>.Load uniform");
-		bench.testCase(shaderLoadTyped2dLinear, loadCB, typedSRV_RG8, "Buffer<RG8>.Load linear");
-		bench.testCase(shaderLoadTyped2dRandom, loadCB, typedSRV_RG8, "Buffer<RG8>.Load random");
-		bench.testCase(shaderLoadTyped4dInvariant, loadCB, typedSRV_RGBA8, "Buffer<RGBA8>.Load uniform");
-		bench.testCase(shaderLoadTyped4dLinear, loadCB, typedSRV_RGBA8, "Buffer<RGBA8>.Load linear");
-		bench.testCase(shaderLoadTyped4dRandom, loadCB, typedSRV_RGBA8, "Buffer<RGBA8>.Load random");
+		bench.testCase(shaderLoadTyped1dInvariant, loadCB.Get(), typedSRV_R8, "Buffer<R8>.Load uniform");
+		bench.testCase(shaderLoadTyped1dLinear, loadCB.Get(), typedSRV_R8, "Buffer<R8>.Load linear");
+		bench.testCase(shaderLoadTyped1dRandom, loadCB.Get(), typedSRV_R8, "Buffer<R8>.Load random");
+		bench.testCase(shaderLoadTyped2dInvariant, loadCB.Get(), typedSRV_RG8, "Buffer<RG8>.Load uniform");
+		bench.testCase(shaderLoadTyped2dLinear, loadCB.Get(), typedSRV_RG8, "Buffer<RG8>.Load linear");
+		bench.testCase(shaderLoadTyped2dRandom, loadCB.Get(), typedSRV_RG8, "Buffer<RG8>.Load random");
+		bench.testCase(shaderLoadTyped4dInvariant, loadCB.Get(), typedSRV_RGBA8, "Buffer<RGBA8>.Load uniform");
+		bench.testCase(shaderLoadTyped4dLinear, loadCB.Get(), typedSRV_RGBA8, "Buffer<RGBA8>.Load linear");
+		bench.testCase(shaderLoadTyped4dRandom, loadCB.Get(), typedSRV_RGBA8, "Buffer<RGBA8>.Load random");
 
-		bench.testCase(shaderLoadTyped1dInvariant, loadCB, typedSRV_R16F, "Buffer<R16f>.Load uniform");
-		bench.testCase(shaderLoadTyped1dLinear, loadCB, typedSRV_R16F, "Buffer<R16f>.Load linear");
-		bench.testCase(shaderLoadTyped1dRandom, loadCB, typedSRV_R16F, "Buffer<R16f>.Load random");
-		bench.testCase(shaderLoadTyped2dInvariant, loadCB, typedSRV_RG16F, "Buffer<RG16f>.Load uniform");
-		bench.testCase(shaderLoadTyped2dLinear, loadCB, typedSRV_RG16F, "Buffer<RG16f>.Load linear");
-		bench.testCase(shaderLoadTyped2dRandom, loadCB, typedSRV_RG16F, "Buffer<RG16f>.Load random");
-		bench.testCase(shaderLoadTyped4dInvariant, loadCB, typedSRV_RGBA16F, "Buffer<RGBA16f>.Load uniform");
-		bench.testCase(shaderLoadTyped4dLinear, loadCB, typedSRV_RGBA16F, "Buffer<RGBA16f>.Load linear");
-		bench.testCase(shaderLoadTyped4dRandom, loadCB, typedSRV_RGBA16F, "Buffer<RGBA16f>.Load random");
+		bench.testCase(shaderLoadTyped1dInvariant, loadCB.Get(), typedSRV_R16F, "Buffer<R16f>.Load uniform");
+		bench.testCase(shaderLoadTyped1dLinear, loadCB.Get(), typedSRV_R16F, "Buffer<R16f>.Load linear");
+		bench.testCase(shaderLoadTyped1dRandom, loadCB.Get(), typedSRV_R16F, "Buffer<R16f>.Load random");
+		bench.testCase(shaderLoadTyped2dInvariant, loadCB.Get(), typedSRV_RG16F, "Buffer<RG16f>.Load uniform");
+		bench.testCase(shaderLoadTyped2dLinear, loadCB.Get(), typedSRV_RG16F, "Buffer<RG16f>.Load linear");
+		bench.testCase(shaderLoadTyped2dRandom, loadCB.Get(), typedSRV_RG16F, "Buffer<RG16f>.Load random");
+		bench.testCase(shaderLoadTyped4dInvariant, loadCB.Get(), typedSRV_RGBA16F, "Buffer<RGBA16f>.Load uniform");
+		bench.testCase(shaderLoadTyped4dLinear, loadCB.Get(), typedSRV_RGBA16F, "Buffer<RGBA16f>.Load linear");
+		bench.testCase(shaderLoadTyped4dRandom, loadCB.Get(), typedSRV_RGBA16F, "Buffer<RGBA16f>.Load random");
 
-		bench.testCase(shaderLoadTyped1dInvariant, loadCB, typedSRV_R32F, "Buffer<R32f>.Load uniform");
-		bench.testCase(shaderLoadTyped1dLinear, loadCB, typedSRV_R32F, "Buffer<R32f>.Load linear");
-		bench.testCase(shaderLoadTyped1dRandom, loadCB, typedSRV_R32F, "Buffer<R32f>.Load random");
-		bench.testCase(shaderLoadTyped2dInvariant, loadCB, typedSRV_RG32F, "Buffer<RG32f>.Load uniform");
-		bench.testCase(shaderLoadTyped2dLinear, loadCB, typedSRV_RG32F, "Buffer<RG32f>.Load linear");
-		bench.testCase(shaderLoadTyped2dRandom, loadCB, typedSRV_RG32F, "Buffer<RG32f>.Load random");
-		bench.testCase(shaderLoadTyped4dInvariant, loadCB, typedSRV_RGBA32F, "Buffer<RGBA32f>.Load uniform");
-		bench.testCase(shaderLoadTyped4dLinear, loadCB, typedSRV_RGBA32F, "Buffer<RGBA32f>.Load linear");
-		bench.testCase(shaderLoadTyped4dRandom, loadCB, typedSRV_RGBA32F, "Buffer<RGBA32f>.Load random");
+		bench.testCase(shaderLoadTyped1dInvariant, loadCB.Get(), typedSRV_R32F, "Buffer<R32f>.Load uniform");
+		bench.testCase(shaderLoadTyped1dLinear, loadCB.Get(), typedSRV_R32F, "Buffer<R32f>.Load linear");
+		bench.testCase(shaderLoadTyped1dRandom, loadCB.Get(), typedSRV_R32F, "Buffer<R32f>.Load random");
+		bench.testCase(shaderLoadTyped2dInvariant, loadCB.Get(), typedSRV_RG32F, "Buffer<RG32f>.Load uniform");
+		bench.testCase(shaderLoadTyped2dLinear, loadCB.Get(), typedSRV_RG32F, "Buffer<RG32f>.Load linear");
+		bench.testCase(shaderLoadTyped2dRandom, loadCB.Get(), typedSRV_RG32F, "Buffer<RG32f>.Load random");
+		bench.testCase(shaderLoadTyped4dInvariant, loadCB.Get(), typedSRV_RGBA32F, "Buffer<RGBA32f>.Load uniform");
+		bench.testCase(shaderLoadTyped4dLinear, loadCB.Get(), typedSRV_RGBA32F, "Buffer<RGBA32f>.Load linear");
+		bench.testCase(shaderLoadTyped4dRandom, loadCB.Get(), typedSRV_RGBA32F, "Buffer<RGBA32f>.Load random");
 
-		bench.testCase(shaderLoadRaw1dInvariant, loadCB, byteAddressSRV, "ByteAddressBuffer.Load uniform");
-		bench.testCase(shaderLoadRaw1dLinear, loadCB, byteAddressSRV, "ByteAddressBuffer.Load linear");
-		bench.testCase(shaderLoadRaw1dRandom, loadCB, byteAddressSRV, "ByteAddressBuffer.Load random");
-		bench.testCase(shaderLoadRaw2dInvariant, loadCB, byteAddressSRV, "ByteAddressBuffer.Load2 uniform");
-		bench.testCase(shaderLoadRaw2dLinear, loadCB, byteAddressSRV, "ByteAddressBuffer.Load2 linear");
-		bench.testCase(shaderLoadRaw2dRandom, loadCB, byteAddressSRV, "ByteAddressBuffer.Load2 random");
-		bench.testCase(shaderLoadRaw3dInvariant, loadCB, byteAddressSRV, "ByteAddressBuffer.Load3 uniform");
-		bench.testCase(shaderLoadRaw3dLinear, loadCB, byteAddressSRV, "ByteAddressBuffer.Load3 linear");
-		bench.testCase(shaderLoadRaw3dRandom, loadCB, byteAddressSRV, "ByteAddressBuffer.Load3 random");
-		bench.testCase(shaderLoadRaw4dInvariant, loadCB, byteAddressSRV, "ByteAddressBuffer.Load4 uniform");
-		bench.testCase(shaderLoadRaw4dLinear, loadCB, byteAddressSRV, "ByteAddressBuffer.Load4 linear");
-		bench.testCase(shaderLoadRaw4dRandom, loadCB, byteAddressSRV, "ByteAddressBuffer.Load4 random");
+		bench.testCase(shaderLoadRaw1dInvariant, loadCB.Get(), byteAddressSRV, "ByteAddressBuffer.Load uniform");
+		bench.testCase(shaderLoadRaw1dLinear, loadCB.Get(), byteAddressSRV, "ByteAddressBuffer.Load linear");
+		bench.testCase(shaderLoadRaw1dRandom, loadCB.Get(), byteAddressSRV, "ByteAddressBuffer.Load random");
+		bench.testCase(shaderLoadRaw2dInvariant, loadCB.Get(), byteAddressSRV, "ByteAddressBuffer.Load2 uniform");
+		bench.testCase(shaderLoadRaw2dLinear, loadCB.Get(), byteAddressSRV, "ByteAddressBuffer.Load2 linear");
+		bench.testCase(shaderLoadRaw2dRandom, loadCB.Get(), byteAddressSRV, "ByteAddressBuffer.Load2 random");
+		bench.testCase(shaderLoadRaw3dInvariant, loadCB.Get(), byteAddressSRV, "ByteAddressBuffer.Load3 uniform");
+		bench.testCase(shaderLoadRaw3dLinear, loadCB.Get(), byteAddressSRV, "ByteAddressBuffer.Load3 linear");
+		bench.testCase(shaderLoadRaw3dRandom, loadCB.Get(), byteAddressSRV, "ByteAddressBuffer.Load3 random");
+		bench.testCase(shaderLoadRaw4dInvariant, loadCB.Get(), byteAddressSRV, "ByteAddressBuffer.Load4 uniform");
+		bench.testCase(shaderLoadRaw4dLinear, loadCB.Get(), byteAddressSRV, "ByteAddressBuffer.Load4 linear");
+		bench.testCase(shaderLoadRaw4dRandom, loadCB.Get(), byteAddressSRV, "ByteAddressBuffer.Load4 random");
 
-		bench.testCase(shaderLoadRaw2dInvariant, loadCBUnaligned, byteAddressSRV, "ByteAddressBuffer.Load2 unaligned uniform");
-		bench.testCase(shaderLoadRaw2dLinear, loadCBUnaligned, byteAddressSRV, "ByteAddressBuffer.Load2 unaligned linear");
-		bench.testCase(shaderLoadRaw2dRandom, loadCBUnaligned, byteAddressSRV, "ByteAddressBuffer.Load2 unaligned random");
-		bench.testCase(shaderLoadRaw4dInvariant, loadCBUnaligned, byteAddressSRV, "ByteAddressBuffer.Load4 unaligned uniform");
-		bench.testCase(shaderLoadRaw4dLinear, loadCBUnaligned, byteAddressSRV, "ByteAddressBuffer.Load4 unaligned linear");
-		bench.testCase(shaderLoadRaw4dRandom, loadCBUnaligned, byteAddressSRV, "ByteAddressBuffer.Load4 unaligned random");
+		bench.testCase(shaderLoadRaw2dInvariant, loadCBUnaligned.Get(), byteAddressSRV, "ByteAddressBuffer.Load2 unaligned uniform");
+		bench.testCase(shaderLoadRaw2dLinear, loadCBUnaligned.Get(), byteAddressSRV, "ByteAddressBuffer.Load2 unaligned linear");
+		bench.testCase(shaderLoadRaw2dRandom, loadCBUnaligned.Get(), byteAddressSRV, "ByteAddressBuffer.Load2 unaligned random");
+		bench.testCase(shaderLoadRaw4dInvariant, loadCBUnaligned.Get(), byteAddressSRV, "ByteAddressBuffer.Load4 unaligned uniform");
+		bench.testCase(shaderLoadRaw4dLinear, loadCBUnaligned.Get(), byteAddressSRV, "ByteAddressBuffer.Load4 unaligned linear");
+		bench.testCase(shaderLoadRaw4dRandom, loadCBUnaligned.Get(), byteAddressSRV, "ByteAddressBuffer.Load4 unaligned random");
 
-		bench.testCase(shaderLoadStructured1dInvariant, loadCB, structuredSRV_R32F, "StructuredBuffer<float>.Load uniform");
-		bench.testCase(shaderLoadStructured1dLinear, loadCB, structuredSRV_R32F, "StructuredBuffer<float>.Load linear");
-		bench.testCase(shaderLoadStructured1dRandom, loadCB, structuredSRV_R32F, "StructuredBuffer<float>.Load random");
-		bench.testCase(shaderLoadStructured2dInvariant, loadCB, structuredSRV_RG32F, "StructuredBuffer<float2>.Load uniform");
-		bench.testCase(shaderLoadStructured2dLinear, loadCB, structuredSRV_RG32F, "StructuredBuffer<float2>.Load linear");
-		bench.testCase(shaderLoadStructured2dRandom, loadCB, structuredSRV_RG32F, "StructuredBuffer<float2>.Load random");
-		bench.testCase(shaderLoadStructured4dInvariant, loadCB, structuredSRV_RGBA32F, "StructuredBuffer<float4>.Load uniform");
-		bench.testCase(shaderLoadStructured4dLinear, loadCB, structuredSRV_RGBA32F, "StructuredBuffer<float4>.Load linear");
-		bench.testCase(shaderLoadStructured4dRandom, loadCB, structuredSRV_RGBA32F, "StructuredBuffer<float4>.Load random");
+		bench.testCase(shaderLoadStructured1dInvariant, loadCB.Get(), structuredSRV_R32F, "StructuredBuffer<float>.Load uniform");
+		bench.testCase(shaderLoadStructured1dLinear, loadCB.Get(), structuredSRV_R32F, "StructuredBuffer<float>.Load linear");
+		bench.testCase(shaderLoadStructured1dRandom, loadCB.Get(), structuredSRV_R32F, "StructuredBuffer<float>.Load random");
+		bench.testCase(shaderLoadStructured2dInvariant, loadCB.Get(), structuredSRV_RG32F, "StructuredBuffer<float2>.Load uniform");
+		bench.testCase(shaderLoadStructured2dLinear, loadCB.Get(), structuredSRV_RG32F, "StructuredBuffer<float2>.Load linear");
+		bench.testCase(shaderLoadStructured2dRandom, loadCB.Get(), structuredSRV_RG32F, "StructuredBuffer<float2>.Load random");
+		bench.testCase(shaderLoadStructured4dInvariant, loadCB.Get(), structuredSRV_RGBA32F, "StructuredBuffer<float4>.Load uniform");
+		bench.testCase(shaderLoadStructured4dLinear, loadCB.Get(), structuredSRV_RGBA32F, "StructuredBuffer<float4>.Load linear");
+		bench.testCase(shaderLoadStructured4dRandom, loadCB.Get(), structuredSRV_RGBA32F, "StructuredBuffer<float4>.Load random");
 
-		bench.testCase(shaderLoadConstant4dInvariant, loadWithArrayCB, nullptr, "cbuffer{float4} load uniform");
-		bench.testCase(shaderLoadConstant4dLinear, loadWithArrayCB, nullptr, "cbuffer{float4} load linear");
-		bench.testCase(shaderLoadConstant4dRandom, loadWithArrayCB, nullptr, "cbuffer{float4} load random");
+		bench.testCase(shaderLoadConstant4dInvariant, loadWithArrayCB.Get(), {}, "cbuffer{float4} load uniform");
+		bench.testCase(shaderLoadConstant4dLinear, loadWithArrayCB.Get(), {}, "cbuffer{float4} load linear");
+		bench.testCase(shaderLoadConstant4dRandom, loadWithArrayCB.Get(), {}, "cbuffer{float4} load random");
 
-		bench.testCase(shaderLoadTex1dInvariant, loadCB, texSRV_R8, "Texture2D<R8>.Load uniform");
-		bench.testCase(shaderLoadTex1dLinear, loadCB, texSRV_R8, "Texture2D<R8>.Load linear");
-		bench.testCase(shaderLoadTex1dRandom, loadCB, texSRV_R8, "Texture2D<R8>.Load random");
-		bench.testCase(shaderLoadTex2dInvariant, loadCB, texSRV_RG8, "Texture2D<RG8>.Load uniform");
-		bench.testCase(shaderLoadTex2dLinear, loadCB, texSRV_RG8, "Texture2D<RG8>.Load linear");
-		bench.testCase(shaderLoadTex2dRandom, loadCB, texSRV_RG8, "Texture2D<RG8>.Load random");
-		bench.testCase(shaderLoadTex4dInvariant, loadCB, texSRV_RGBA8, "Texture2D<RGBA8>.Load uniform");
-		bench.testCase(shaderLoadTex4dLinear, loadCB, texSRV_RGBA8, "Texture2D<RGBA8>.Load linear");
-		bench.testCase(shaderLoadTex4dRandom, loadCB, texSRV_RGBA8, "Texture2D<RGBA8>.Load random");
+		bench.testCase(shaderLoadTex1dInvariant, loadCB.Get(), texSRV_R8, "Texture2D<R8>.Load uniform");
+		bench.testCase(shaderLoadTex1dLinear, loadCB.Get(), texSRV_R8, "Texture2D<R8>.Load linear");
+		bench.testCase(shaderLoadTex1dRandom, loadCB.Get(), texSRV_R8, "Texture2D<R8>.Load random");
+		bench.testCase(shaderLoadTex2dInvariant, loadCB.Get(), texSRV_RG8, "Texture2D<RG8>.Load uniform");
+		bench.testCase(shaderLoadTex2dLinear, loadCB.Get(), texSRV_RG8, "Texture2D<RG8>.Load linear");
+		bench.testCase(shaderLoadTex2dRandom, loadCB.Get(), texSRV_RG8, "Texture2D<RG8>.Load random");
+		bench.testCase(shaderLoadTex4dInvariant, loadCB.Get(), texSRV_RGBA8, "Texture2D<RGBA8>.Load uniform");
+		bench.testCase(shaderLoadTex4dLinear, loadCB.Get(), texSRV_RGBA8, "Texture2D<RGBA8>.Load linear");
+		bench.testCase(shaderLoadTex4dRandom, loadCB.Get(), texSRV_RGBA8, "Texture2D<RGBA8>.Load random");
 
-		bench.testCase(shaderLoadTex1dInvariant, loadCB, texSRV_R16F, "Texture2D<R16F>.Load uniform");
-		bench.testCase(shaderLoadTex1dLinear, loadCB, texSRV_R16F, "Texture2D<R16F>.Load linear");
-		bench.testCase(shaderLoadTex1dRandom, loadCB, texSRV_R16F, "Texture2D<R16F>.Load random");
-		bench.testCase(shaderLoadTex2dInvariant, loadCB, texSRV_RG16F, "Texture2D<RG16F>.Load uniform");
-		bench.testCase(shaderLoadTex2dLinear, loadCB, texSRV_RG16F, "Texture2D<RG16F>.Load linear");
-		bench.testCase(shaderLoadTex2dRandom, loadCB, texSRV_RG16F, "Texture2D<RG16F>.Load random");
-		bench.testCase(shaderLoadTex4dInvariant, loadCB, texSRV_RGBA16F, "Texture2D<RGBA16F>.Load uniform");
-		bench.testCase(shaderLoadTex4dLinear, loadCB, texSRV_RGBA16F, "Texture2D<RGBA16F>.Load linear");
-		bench.testCase(shaderLoadTex4dRandom, loadCB, texSRV_RGBA16F, "Texture2D<RGBA16F>.Load random");
+		bench.testCase(shaderLoadTex1dInvariant, loadCB.Get(), texSRV_R16F, "Texture2D<R16F>.Load uniform");
+		bench.testCase(shaderLoadTex1dLinear, loadCB.Get(), texSRV_R16F, "Texture2D<R16F>.Load linear");
+		bench.testCase(shaderLoadTex1dRandom, loadCB.Get(), texSRV_R16F, "Texture2D<R16F>.Load random");
+		bench.testCase(shaderLoadTex2dInvariant, loadCB.Get(), texSRV_RG16F, "Texture2D<RG16F>.Load uniform");
+		bench.testCase(shaderLoadTex2dLinear, loadCB.Get(), texSRV_RG16F, "Texture2D<RG16F>.Load linear");
+		bench.testCase(shaderLoadTex2dRandom, loadCB.Get(), texSRV_RG16F, "Texture2D<RG16F>.Load random");
+		bench.testCase(shaderLoadTex4dInvariant, loadCB.Get(), texSRV_RGBA16F, "Texture2D<RGBA16F>.Load uniform");
+		bench.testCase(shaderLoadTex4dLinear, loadCB.Get(), texSRV_RGBA16F, "Texture2D<RGBA16F>.Load linear");
+		bench.testCase(shaderLoadTex4dRandom, loadCB.Get(), texSRV_RGBA16F, "Texture2D<RGBA16F>.Load random");
 
-		bench.testCase(shaderLoadTex1dInvariant, loadCB, texSRV_R32F, "Texture2D<R32F>.Load uniform");
-		bench.testCase(shaderLoadTex1dLinear, loadCB, texSRV_R32F, "Texture2D<R32F>.Load linear");
-		bench.testCase(shaderLoadTex1dRandom, loadCB, texSRV_R32F, "Texture2D<R32F>.Load random");
-		bench.testCase(shaderLoadTex2dInvariant, loadCB, texSRV_RG32F, "Texture2D<RG32F>.Load uniform");
-		bench.testCase(shaderLoadTex2dLinear, loadCB, texSRV_RG32F, "Texture2D<RG32F>.Load linear");
-		bench.testCase(shaderLoadTex2dRandom, loadCB, texSRV_RG32F, "Texture2D<RG32F>.Load random");
-		bench.testCase(shaderLoadTex4dInvariant, loadCB, texSRV_RGBA32F, "Texture2D<RGBA32F>.Load uniform");
-		bench.testCase(shaderLoadTex4dLinear, loadCB, texSRV_RGBA32F, "Texture2D<RGBA32F>.Load linear");
-		bench.testCase(shaderLoadTex4dRandom, loadCB, texSRV_RGBA32F, "Texture2D<RGBA32F>.Load random");
+		bench.testCase(shaderLoadTex1dInvariant, loadCB.Get(), texSRV_R32F, "Texture2D<R32F>.Load uniform");
+		bench.testCase(shaderLoadTex1dLinear, loadCB.Get(), texSRV_R32F, "Texture2D<R32F>.Load linear");
+		bench.testCase(shaderLoadTex1dRandom, loadCB.Get(), texSRV_R32F, "Texture2D<R32F>.Load random");
+		bench.testCase(shaderLoadTex2dInvariant, loadCB.Get(), texSRV_RG32F, "Texture2D<RG32F>.Load uniform");
+		bench.testCase(shaderLoadTex2dLinear, loadCB.Get(), texSRV_RG32F, "Texture2D<RG32F>.Load linear");
+		bench.testCase(shaderLoadTex2dRandom, loadCB.Get(), texSRV_RG32F, "Texture2D<RG32F>.Load random");
+		bench.testCase(shaderLoadTex4dInvariant, loadCB.Get(), texSRV_RGBA32F, "Texture2D<RGBA32F>.Load uniform");
+		bench.testCase(shaderLoadTex4dLinear, loadCB.Get(), texSRV_RGBA32F, "Texture2D<RGBA32F>.Load linear");
+		bench.testCase(shaderLoadTex4dRandom, loadCB.Get(), texSRV_RGBA32F, "Texture2D<RGBA32F>.Load random");
 
-		bench.testCaseWithSampler(shaderSampleTex1dInvariant, loadCB, texSRV_R8, samplerNearest, "Texture2D<R8>.Sample(nearest) uniform");
-		bench.testCaseWithSampler(shaderSampleTex1dLinear, loadCB, texSRV_R8, samplerNearest, "Texture2D<R8>.Sample(nearest) linear");
-		bench.testCaseWithSampler(shaderSampleTex1dRandom, loadCB, texSRV_R8, samplerNearest, "Texture2D<R8>.Sample(nearest) random");
-		bench.testCaseWithSampler(shaderSampleTex2dInvariant, loadCB, texSRV_RG8, samplerNearest, "Texture2D<RG8>.Sample(nearest) uniform");
-		bench.testCaseWithSampler(shaderSampleTex2dLinear, loadCB, texSRV_RG8, samplerNearest, "Texture2D<RG8>.Sample(nearest) linear");
-		bench.testCaseWithSampler(shaderSampleTex2dRandom, loadCB, texSRV_RG8, samplerNearest, "Texture2D<RG8>.Sample(nearest) random");
-		bench.testCaseWithSampler(shaderSampleTex4dInvariant, loadCB, texSRV_RGBA8, samplerNearest, "Texture2D<RGBA8>.Sample(nearest) uniform");
-		bench.testCaseWithSampler(shaderSampleTex4dLinear, loadCB, texSRV_RGBA8, samplerNearest, "Texture2D<RGBA8>.Sample(nearest) linear");
-		bench.testCaseWithSampler(shaderSampleTex4dRandom, loadCB, texSRV_RGBA8, samplerNearest, "Texture2D<RGBA8>.Sample(nearest) random");
+		bench.testCaseWithSampler(shaderSampleTex1dInvariant, loadCB.Get(), texSRV_R8, samplerNearest, "Texture2D<R8>.Sample(nearest) uniform");
+		bench.testCaseWithSampler(shaderSampleTex1dLinear, loadCB.Get(), texSRV_R8, samplerNearest, "Texture2D<R8>.Sample(nearest) linear");
+		bench.testCaseWithSampler(shaderSampleTex1dRandom, loadCB.Get(), texSRV_R8, samplerNearest, "Texture2D<R8>.Sample(nearest) random");
+		bench.testCaseWithSampler(shaderSampleTex2dInvariant, loadCB.Get(), texSRV_RG8, samplerNearest, "Texture2D<RG8>.Sample(nearest) uniform");
+		bench.testCaseWithSampler(shaderSampleTex2dLinear, loadCB.Get(), texSRV_RG8, samplerNearest, "Texture2D<RG8>.Sample(nearest) linear");
+		bench.testCaseWithSampler(shaderSampleTex2dRandom, loadCB.Get(), texSRV_RG8, samplerNearest, "Texture2D<RG8>.Sample(nearest) random");
+		bench.testCaseWithSampler(shaderSampleTex4dInvariant, loadCB.Get(), texSRV_RGBA8, samplerNearest, "Texture2D<RGBA8>.Sample(nearest) uniform");
+		bench.testCaseWithSampler(shaderSampleTex4dLinear, loadCB.Get(), texSRV_RGBA8, samplerNearest, "Texture2D<RGBA8>.Sample(nearest) linear");
+		bench.testCaseWithSampler(shaderSampleTex4dRandom, loadCB.Get(), texSRV_RGBA8, samplerNearest, "Texture2D<RGBA8>.Sample(nearest) random");
 
-		bench.testCaseWithSampler(shaderSampleTex1dInvariant, loadCB, texSRV_R16F, samplerNearest, "Texture2D<R16F>.Sample(nearest) uniform");
-		bench.testCaseWithSampler(shaderSampleTex1dLinear, loadCB, texSRV_R16F, samplerNearest, "Texture2D<R16F>.Sample(nearest) linear");
-		bench.testCaseWithSampler(shaderSampleTex1dRandom, loadCB, texSRV_R16F, samplerNearest, "Texture2D<R16F>.Sample(nearest) random");
-		bench.testCaseWithSampler(shaderSampleTex2dInvariant, loadCB, texSRV_RG16F, samplerNearest, "Texture2D<RG16F>.Sample(nearest) uniform");
-		bench.testCaseWithSampler(shaderSampleTex2dLinear, loadCB, texSRV_RG16F, samplerNearest, "Texture2D<RG16F>.Sample(nearest) linear");
-		bench.testCaseWithSampler(shaderSampleTex2dRandom, loadCB, texSRV_RG16F, samplerNearest, "Texture2D<RG16F>.Sample(nearest) random");
-		bench.testCaseWithSampler(shaderSampleTex4dInvariant, loadCB, texSRV_RGBA16F, samplerNearest, "Texture2D<RGBA16F>.Sample(nearest) uniform");
-		bench.testCaseWithSampler(shaderSampleTex4dLinear, loadCB, texSRV_RGBA16F, samplerNearest, "Texture2D<RGBA16F>.Sample(nearest) linear");
-		bench.testCaseWithSampler(shaderSampleTex4dRandom, loadCB, texSRV_RGBA16F, samplerNearest, "Texture2D<RGBA16F>.Sample(nearest) random");
+		bench.testCaseWithSampler(shaderSampleTex1dInvariant, loadCB.Get(), texSRV_R16F, samplerNearest, "Texture2D<R16F>.Sample(nearest) uniform");
+		bench.testCaseWithSampler(shaderSampleTex1dLinear, loadCB.Get(), texSRV_R16F, samplerNearest, "Texture2D<R16F>.Sample(nearest) linear");
+		bench.testCaseWithSampler(shaderSampleTex1dRandom, loadCB.Get(), texSRV_R16F, samplerNearest, "Texture2D<R16F>.Sample(nearest) random");
+		bench.testCaseWithSampler(shaderSampleTex2dInvariant, loadCB.Get(), texSRV_RG16F, samplerNearest, "Texture2D<RG16F>.Sample(nearest) uniform");
+		bench.testCaseWithSampler(shaderSampleTex2dLinear, loadCB.Get(), texSRV_RG16F, samplerNearest, "Texture2D<RG16F>.Sample(nearest) linear");
+		bench.testCaseWithSampler(shaderSampleTex2dRandom, loadCB.Get(), texSRV_RG16F, samplerNearest, "Texture2D<RG16F>.Sample(nearest) random");
+		bench.testCaseWithSampler(shaderSampleTex4dInvariant, loadCB.Get(), texSRV_RGBA16F, samplerNearest, "Texture2D<RGBA16F>.Sample(nearest) uniform");
+		bench.testCaseWithSampler(shaderSampleTex4dLinear, loadCB.Get(), texSRV_RGBA16F, samplerNearest, "Texture2D<RGBA16F>.Sample(nearest) linear");
+		bench.testCaseWithSampler(shaderSampleTex4dRandom, loadCB.Get(), texSRV_RGBA16F, samplerNearest, "Texture2D<RGBA16F>.Sample(nearest) random");
 
-		bench.testCaseWithSampler(shaderSampleTex1dInvariant, loadCB, texSRV_R32F, samplerNearest, "Texture2D<R32F>.Sample(nearest) uniform");
-		bench.testCaseWithSampler(shaderSampleTex1dLinear, loadCB, texSRV_R32F, samplerNearest, "Texture2D<R32F>.Sample(nearest) linear");
-		bench.testCaseWithSampler(shaderSampleTex1dRandom, loadCB, texSRV_R32F, samplerNearest, "Texture2D<R32F>.Sample(nearest) random");
-		bench.testCaseWithSampler(shaderSampleTex2dInvariant, loadCB, texSRV_RG32F, samplerNearest, "Texture2D<RG32F>.Sample(nearest) uniform");
-		bench.testCaseWithSampler(shaderSampleTex2dLinear, loadCB, texSRV_RG32F, samplerNearest, "Texture2D<RG32F>.Sample(nearest) linear");
-		bench.testCaseWithSampler(shaderSampleTex2dRandom, loadCB, texSRV_RG32F, samplerNearest, "Texture2D<RG32F>.Sample(nearest) random");
-		bench.testCaseWithSampler(shaderSampleTex4dInvariant, loadCB, texSRV_RGBA32F, samplerNearest, "Texture2D<RGBA32F>.Sample(bilinear) uniform");
-		bench.testCaseWithSampler(shaderSampleTex4dLinear, loadCB, texSRV_RGBA32F, samplerNearest, "Texture2D<RGBA32F>.Sample(nearest) linear");
-		bench.testCaseWithSampler(shaderSampleTex4dRandom, loadCB, texSRV_RGBA32F, samplerNearest, "Texture2D<RGBA32F>.Sample(nearest) random");
+		bench.testCaseWithSampler(shaderSampleTex1dInvariant, loadCB.Get(), texSRV_R32F, samplerNearest, "Texture2D<R32F>.Sample(nearest) uniform");
+		bench.testCaseWithSampler(shaderSampleTex1dLinear, loadCB.Get(), texSRV_R32F, samplerNearest, "Texture2D<R32F>.Sample(nearest) linear");
+		bench.testCaseWithSampler(shaderSampleTex1dRandom, loadCB.Get(), texSRV_R32F, samplerNearest, "Texture2D<R32F>.Sample(nearest) random");
+		bench.testCaseWithSampler(shaderSampleTex2dInvariant, loadCB.Get(), texSRV_RG32F, samplerNearest, "Texture2D<RG32F>.Sample(nearest) uniform");
+		bench.testCaseWithSampler(shaderSampleTex2dLinear, loadCB.Get(), texSRV_RG32F, samplerNearest, "Texture2D<RG32F>.Sample(nearest) linear");
+		bench.testCaseWithSampler(shaderSampleTex2dRandom, loadCB.Get(), texSRV_RG32F, samplerNearest, "Texture2D<RG32F>.Sample(nearest) random");
+		bench.testCaseWithSampler(shaderSampleTex4dInvariant, loadCB.Get(), texSRV_RGBA32F, samplerNearest, "Texture2D<RGBA32F>.Sample(bilinear) uniform");
+		bench.testCaseWithSampler(shaderSampleTex4dLinear, loadCB.Get(), texSRV_RGBA32F, samplerNearest, "Texture2D<RGBA32F>.Sample(nearest) linear");
+		bench.testCaseWithSampler(shaderSampleTex4dRandom, loadCB.Get(), texSRV_RGBA32F, samplerNearest, "Texture2D<RGBA32F>.Sample(nearest) random");
 
-		bench.testCaseWithSampler(shaderSampleTex1dInvariant, loadCB, texSRV_R8, samplerBilinear, "Texture2D<R8>.Sample(bilinear) uniform");
-		bench.testCaseWithSampler(shaderSampleTex1dLinear, loadCB, texSRV_R8, samplerBilinear, "Texture2D<R8>.Sample(bilinear) linear");
-		bench.testCaseWithSampler(shaderSampleTex1dRandom, loadCB, texSRV_R8, samplerBilinear, "Texture2D<R8>.Sample(bilinear) random");
-		bench.testCaseWithSampler(shaderSampleTex2dInvariant, loadCB, texSRV_RG8, samplerBilinear, "Texture2D<RG8>.Sample(bilinear) uniform");
-		bench.testCaseWithSampler(shaderSampleTex2dLinear, loadCB, texSRV_RG8, samplerBilinear, "Texture2D<RG8>.Sample(bilinear) linear");
-		bench.testCaseWithSampler(shaderSampleTex2dRandom, loadCB, texSRV_RG8, samplerBilinear, "Texture2D<RG8>.Sample(bilinear) random");
-		bench.testCaseWithSampler(shaderSampleTex4dInvariant, loadCB, texSRV_RGBA8, samplerBilinear, "Texture2D<RGBA8>.Sample(bilinear) uniform");
-		bench.testCaseWithSampler(shaderSampleTex4dLinear, loadCB, texSRV_RGBA8, samplerBilinear, "Texture2D<RGBA8>.Sample(bilinear) linear");
-		bench.testCaseWithSampler(shaderSampleTex4dRandom, loadCB, texSRV_RGBA8, samplerBilinear, "Texture2D<RGBA8>.Sample(bilinear) random");
+		bench.testCaseWithSampler(shaderSampleTex1dInvariant, loadCB.Get(), texSRV_R8, samplerBilinear, "Texture2D<R8>.Sample(bilinear) uniform");
+		bench.testCaseWithSampler(shaderSampleTex1dLinear, loadCB.Get(), texSRV_R8, samplerBilinear, "Texture2D<R8>.Sample(bilinear) linear");
+		bench.testCaseWithSampler(shaderSampleTex1dRandom, loadCB.Get(), texSRV_R8, samplerBilinear, "Texture2D<R8>.Sample(bilinear) random");
+		bench.testCaseWithSampler(shaderSampleTex2dInvariant, loadCB.Get(), texSRV_RG8, samplerBilinear, "Texture2D<RG8>.Sample(bilinear) uniform");
+		bench.testCaseWithSampler(shaderSampleTex2dLinear, loadCB.Get(), texSRV_RG8, samplerBilinear, "Texture2D<RG8>.Sample(bilinear) linear");
+		bench.testCaseWithSampler(shaderSampleTex2dRandom, loadCB.Get(), texSRV_RG8, samplerBilinear, "Texture2D<RG8>.Sample(bilinear) random");
+		bench.testCaseWithSampler(shaderSampleTex4dInvariant, loadCB.Get(), texSRV_RGBA8, samplerBilinear, "Texture2D<RGBA8>.Sample(bilinear) uniform");
+		bench.testCaseWithSampler(shaderSampleTex4dLinear, loadCB.Get(), texSRV_RGBA8, samplerBilinear, "Texture2D<RGBA8>.Sample(bilinear) linear");
+		bench.testCaseWithSampler(shaderSampleTex4dRandom, loadCB.Get(), texSRV_RGBA8, samplerBilinear, "Texture2D<RGBA8>.Sample(bilinear) random");
 
-		bench.testCaseWithSampler(shaderSampleTex1dInvariant, loadCB, texSRV_R16F, samplerBilinear, "Texture2D<R16F>.Sample(bilinear) uniform");
-		bench.testCaseWithSampler(shaderSampleTex1dLinear, loadCB, texSRV_R16F, samplerBilinear, "Texture2D<R16F>.Sample(bilinear) linear");
-		bench.testCaseWithSampler(shaderSampleTex1dRandom, loadCB, texSRV_R16F, samplerBilinear, "Texture2D<R16F>.Sample(bilinear) random");
-		bench.testCaseWithSampler(shaderSampleTex2dInvariant, loadCB, texSRV_RG16F, samplerBilinear, "Texture2D<RG16F>.Sample(bilinear) uniform");
-		bench.testCaseWithSampler(shaderSampleTex2dLinear, loadCB, texSRV_RG16F, samplerBilinear, "Texture2D<RG16F>.Sample(bilinear) linear");
-		bench.testCaseWithSampler(shaderSampleTex2dRandom, loadCB, texSRV_RG16F, samplerBilinear, "Texture2D<RG16F>.Sample(bilinear) random");
-		bench.testCaseWithSampler(shaderSampleTex4dInvariant, loadCB, texSRV_RGBA16F, samplerBilinear, "Texture2D<RGBA16F>.Sample(bilinear) uniform");
-		bench.testCaseWithSampler(shaderSampleTex4dLinear, loadCB, texSRV_RGBA16F, samplerBilinear, "Texture2D<RGBA16F>.Sample(bilinear) linear");
-		bench.testCaseWithSampler(shaderSampleTex4dRandom, loadCB, texSRV_RGBA16F, samplerBilinear, "Texture2D<RGBA16F>.Sample(bilinear) random");
+		bench.testCaseWithSampler(shaderSampleTex1dInvariant, loadCB.Get(), texSRV_R16F, samplerBilinear, "Texture2D<R16F>.Sample(bilinear) uniform");
+		bench.testCaseWithSampler(shaderSampleTex1dLinear, loadCB.Get(), texSRV_R16F, samplerBilinear, "Texture2D<R16F>.Sample(bilinear) linear");
+		bench.testCaseWithSampler(shaderSampleTex1dRandom, loadCB.Get(), texSRV_R16F, samplerBilinear, "Texture2D<R16F>.Sample(bilinear) random");
+		bench.testCaseWithSampler(shaderSampleTex2dInvariant, loadCB.Get(), texSRV_RG16F, samplerBilinear, "Texture2D<RG16F>.Sample(bilinear) uniform");
+		bench.testCaseWithSampler(shaderSampleTex2dLinear, loadCB.Get(), texSRV_RG16F, samplerBilinear, "Texture2D<RG16F>.Sample(bilinear) linear");
+		bench.testCaseWithSampler(shaderSampleTex2dRandom, loadCB.Get(), texSRV_RG16F, samplerBilinear, "Texture2D<RG16F>.Sample(bilinear) random");
+		bench.testCaseWithSampler(shaderSampleTex4dInvariant, loadCB.Get(), texSRV_RGBA16F, samplerBilinear, "Texture2D<RGBA16F>.Sample(bilinear) uniform");
+		bench.testCaseWithSampler(shaderSampleTex4dLinear, loadCB.Get(), texSRV_RGBA16F, samplerBilinear, "Texture2D<RGBA16F>.Sample(bilinear) linear");
+		bench.testCaseWithSampler(shaderSampleTex4dRandom, loadCB.Get(), texSRV_RGBA16F, samplerBilinear, "Texture2D<RGBA16F>.Sample(bilinear) random");
 
-		bench.testCaseWithSampler(shaderSampleTex1dInvariant, loadCB, texSRV_R32F, samplerBilinear, "Texture2D<R32F>.Sample(bilinear) uniform");
-		bench.testCaseWithSampler(shaderSampleTex1dLinear, loadCB, texSRV_R32F, samplerBilinear, "Texture2D<R32F>.Sample(bilinear) linear");
-		bench.testCaseWithSampler(shaderSampleTex1dRandom, loadCB, texSRV_R32F, samplerBilinear, "Texture2D<R32F>.Sample(bilinear) random");
-		bench.testCaseWithSampler(shaderSampleTex2dInvariant, loadCB, texSRV_RG32F, samplerBilinear, "Texture2D<RG32F>.Sample(bilinear) uniform");
-		bench.testCaseWithSampler(shaderSampleTex2dLinear, loadCB, texSRV_RG32F, samplerBilinear, "Texture2D<RG32F>.Sample(bilinear) linear");
-		bench.testCaseWithSampler(shaderSampleTex2dRandom, loadCB, texSRV_RG32F, samplerBilinear, "Texture2D<RG32F>.Sample(bilinear) random");
-		bench.testCaseWithSampler(shaderSampleTex4dInvariant, loadCB, texSRV_RGBA32F, samplerBilinear, "Texture2D<RGBA32F>.Sample(bilinear) uniform");
-		bench.testCaseWithSampler(shaderSampleTex4dLinear, loadCB, texSRV_RGBA32F, samplerBilinear, "Texture2D<RGBA32F>.Sample(bilinear) linear");
-		bench.testCaseWithSampler(shaderSampleTex4dRandom, loadCB, texSRV_RGBA32F, samplerBilinear, "Texture2D<RGBA32F>.Sample(bilinear) random");
+		bench.testCaseWithSampler(shaderSampleTex1dInvariant, loadCB.Get(), texSRV_R32F, samplerBilinear, "Texture2D<R32F>.Sample(bilinear) uniform");
+		bench.testCaseWithSampler(shaderSampleTex1dLinear, loadCB.Get(), texSRV_R32F, samplerBilinear, "Texture2D<R32F>.Sample(bilinear) linear");
+		bench.testCaseWithSampler(shaderSampleTex1dRandom, loadCB.Get(), texSRV_R32F, samplerBilinear, "Texture2D<R32F>.Sample(bilinear) random");
+		bench.testCaseWithSampler(shaderSampleTex2dInvariant, loadCB.Get(), texSRV_RG32F, samplerBilinear, "Texture2D<RG32F>.Sample(bilinear) uniform");
+		bench.testCaseWithSampler(shaderSampleTex2dLinear, loadCB.Get(), texSRV_RG32F, samplerBilinear, "Texture2D<RG32F>.Sample(bilinear) linear");
+		bench.testCaseWithSampler(shaderSampleTex2dRandom, loadCB.Get(), texSRV_RG32F, samplerBilinear, "Texture2D<RG32F>.Sample(bilinear) random");
+		bench.testCaseWithSampler(shaderSampleTex4dInvariant, loadCB.Get(), texSRV_RGBA32F, samplerBilinear, "Texture2D<RGBA32F>.Sample(bilinear) uniform");
+		bench.testCaseWithSampler(shaderSampleTex4dLinear, loadCB.Get(), texSRV_RGBA32F, samplerBilinear, "Texture2D<RGBA32F>.Sample(bilinear) linear");
+		bench.testCaseWithSampler(shaderSampleTex4dRandom, loadCB.Get(), texSRV_RGBA32F, samplerBilinear, "Texture2D<RGBA32F>.Sample(bilinear) random");
 
 		dx.presentFrame();
 

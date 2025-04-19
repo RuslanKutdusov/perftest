@@ -1,18 +1,163 @@
 #include "directx.h"
 #include <assert.h>
+#define USE_PIX 1
+#include <pix3.h>
 
-std::vector<com_ptr<IDXGIAdapter>> enumerateAdapters()
+ComPtr<IDXGIFactory4> GDXGIFactory;
+
+static D3D12_RESOURCE_DESC InitBufferResourceDesc(size_t sizeInBytes)
 {
-	std::vector<com_ptr<IDXGIAdapter>> adapters;
-
-	com_ptr<IDXGIFactory> factory;
-	if (FAILED(CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory)))
+	return
 	{
-		return adapters;
+		.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER,
+		.Alignment = 0,
+		.Width = sizeInBytes,
+		.Height = 1,
+		.DepthOrArraySize = 1,
+		.MipLevels = 1,
+		.Format = DXGI_FORMAT_UNKNOWN,
+		.SampleDesc = 
+		{
+			.Count = 1,
+			.Quality = 0,
+		},
+		.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR,
+		.Flags = D3D12_RESOURCE_FLAG_NONE
+	};
+}
+
+static UINT Align(UINT value, UINT alignment)
+{
+	UINT mask = alignment - 1;
+	return (value + mask) & ~mask;
+}
+
+ComputePSO::ComputePSO(ID3D12Device* device, const std::string& name, const std::vector<unsigned char>& shaderBytes)
+{
+	D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc =
+	{
+		.CS =
+		{
+			.pShaderBytecode = shaderBytes.data(),
+			.BytecodeLength = shaderBytes.size()
+		}
+	};
+
+	HRESULT result = device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(pso.GetAddressOf()));
+	assert(SUCCEEDED(result));
+
+	std::vector<wchar_t> wname;
+	wname.resize(name.length() + 1);
+	size_t wnameLen = 0;
+	mbstowcs_s(&wnameLen, wname.data(), wname.size(), name.c_str(), name.length());
+	pso->SetName(wname.data());
+
+	ComPtr<ID3D12RootSignatureDeserializer> deserializer;
+	result = D3D12CreateRootSignatureDeserializer(
+		shaderBytes.data(),
+		shaderBytes.size(),
+		IID_PPV_ARGS(deserializer.GetAddressOf()));
+	assert(SUCCEEDED(result));
+
+	auto dxRootSigDesc = deserializer->GetRootSignatureDesc();
+	for (uint32_t rootParamIdx = 0; rootParamIdx < dxRootSigDesc->NumParameters; rootParamIdx++)
+	{
+		Binding binding = { .rootParamIdx = rootParamIdx };
+		const D3D12_ROOT_PARAMETER& rootParam = dxRootSigDesc->pParameters[rootParamIdx];
+		if (rootParam.ParameterType == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE)
+		{
+			binding.descriptorOffset = 0;
+			bool isSamplerDescriptorTable = false;
+			for (uint32_t rangeIdx = 0; rangeIdx < rootParam.DescriptorTable.NumDescriptorRanges; rangeIdx++)
+			{
+				auto& range = rootParam.DescriptorTable.pDescriptorRanges[rangeIdx];
+				if (range.OffsetInDescriptorsFromTableStart != D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND)
+					binding.descriptorOffset = range.OffsetInDescriptorsFromTableStart;
+
+				EBindingType bindingType = {};
+				if (range.RangeType == D3D12_DESCRIPTOR_RANGE_TYPE_SRV)
+					bindingType = EBindingType::kSrv;
+				else if (range.RangeType == D3D12_DESCRIPTOR_RANGE_TYPE_CBV)
+					bindingType = EBindingType::kCbv;
+				else if (range.RangeType == D3D12_DESCRIPTOR_RANGE_TYPE_UAV)
+					bindingType = EBindingType::kUav;
+				else if (range.RangeType == D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER)
+				{
+					bindingType = EBindingType::kSampler;
+					isSamplerDescriptorTable = true;
+				}
+
+				binding.isRootDescriptor = false;
+				for (uint32_t descriptorIdx = 0; descriptorIdx < range.NumDescriptors; descriptorIdx++)
+				{
+					uint32_t reg = range.BaseShaderRegister + descriptorIdx;
+					bindings[(int)bindingType][reg] = binding;
+					binding.descriptorOffset++;
+				}
+			}
+
+			RootParameter ourRootParam = {
+				.type = rootParam.ParameterType,
+				.numDescriptors = binding.descriptorOffset,
+				.isSamplerDescriptorTable = isSamplerDescriptorTable
+			};
+			rootSignatureDesc.push_back(ourRootParam);
+		}
+		else
+		{
+			EBindingType bindingType = {};
+			if (rootParam.ParameterType == D3D12_ROOT_PARAMETER_TYPE_SRV)
+				bindingType = EBindingType::kSrv;
+			else if (rootParam.ParameterType == D3D12_ROOT_PARAMETER_TYPE_CBV)
+				bindingType = EBindingType::kCbv;
+			else if (rootParam.ParameterType == D3D12_ROOT_PARAMETER_TYPE_UAV)
+				bindingType = EBindingType::kUav;
+			else
+				assert(false);
+
+			binding.isRootDescriptor = true;
+			bindings[(int)bindingType][rootParam.Descriptor.ShaderRegister] = binding;
+
+			RootParameter ourRootParam = {
+				.type = rootParam.ParameterType,
+				.numDescriptors = 1
+			};
+			rootSignatureDesc.push_back(ourRootParam);
+		}
 	}
 
-	IDXGIAdapter* adapter;
-	for (UINT i = 0; factory->EnumAdapters(i, &adapter) != DXGI_ERROR_NOT_FOUND; ++i)
+	result = device->CreateRootSignature(
+		0,
+		shaderBytes.data(),
+		shaderBytes.size(),
+		IID_PPV_ARGS(rootSig.GetAddressOf()));
+	assert(SUCCEEDED(result));
+}
+
+const ComputePSO::Binding* ComputePSO::getBinding(uint32_t slot, EBindingType type) const
+{
+	auto& map = bindings[(int)type];
+	auto iterator = map.find(slot);
+	if (iterator == map.end())
+		return nullptr;
+	return &iterator->second;
+}
+
+std::vector<ComPtr<IDXGIAdapter>> enumerateAdapters()
+{
+	std::vector<ComPtr<IDXGIAdapter>> adapters;
+
+#if _DEBUG
+	UINT dxgiFactoryFlag = DXGI_CREATE_FACTORY_DEBUG;
+#else
+	UINT dxgiFactoryFlag = 0;
+#endif
+
+	HRESULT hr = CreateDXGIFactory2(dxgiFactoryFlag, IID_PPV_ARGS(GDXGIFactory.GetAddressOf()));
+	assert(SUCCEEDED(hr));
+
+	ComPtr<IDXGIAdapter> adapter;
+	for (UINT i = 0; GDXGIFactory->EnumAdapters(i, adapter.GetAddressOf()) != DXGI_ERROR_NOT_FOUND; ++i)
 	{
 		adapters.push_back(adapter);
 	}
@@ -23,510 +168,555 @@ std::vector<com_ptr<IDXGIAdapter>> enumerateAdapters()
 DirectXDevice::DirectXDevice(HWND window, uint2 resolution, IDXGIAdapter* adapter) : 
 	windowHandle(window),
 	resolution(resolution)
-
 {
-#ifdef _DEBUG
-	UINT flags = D3D11_CREATE_DEVICE_DEBUG;
-#else
-	UINT flags = 0;
+#if _DEBUG
+	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugInterface.GetAddressOf()))))
+	{
+		debugInterface->EnableDebugLayer();
+		//debugInterface->SetEnableGPUBasedValidation(true);
+	}
 #endif
-	D3D_FEATURE_LEVEL featureLevel = D3D_FEATURE_LEVEL_11_0;
 
-	DXGI_SWAP_CHAIN_DESC swapDesc;
-	ZeroMemory(&swapDesc, sizeof(DXGI_SWAP_CHAIN_DESC));
-	swapDesc.BufferDesc.Width = resolution.x;
-	swapDesc.BufferDesc.Height = resolution.y;
-	swapDesc.BufferDesc.RefreshRate.Numerator = 60;
-	swapDesc.BufferDesc.RefreshRate.Denominator = 1;
-	swapDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	swapDesc.SampleDesc.Count = 1;
-	swapDesc.BufferUsage = DXGI_USAGE_UNORDERED_ACCESS | DXGI_USAGE_RENDER_TARGET_OUTPUT; // RT needed for GDI text output
-	swapDesc.BufferCount = 1;
-	swapDesc.OutputWindow = window;
-	swapDesc.Windowed = true;
-	swapDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-	swapDesc.Flags = 0;
+	D3D_FEATURE_LEVEL featureLevel = D3D_FEATURE_LEVEL_12_0;
 
-	HRESULT result = D3D11CreateDeviceAndSwapChain(
-		adapter,
-		D3D_DRIVER_TYPE_UNKNOWN,
-		nullptr, // software rasterizer
-		flags,
-		&featureLevel,
-		1, // num feature levels
-		D3D11_SDK_VERSION, // sdk version
-		&swapDesc,
-		&swapChain,
-		&device,
-		nullptr, // selected feature level
-		&deviceContext);
-
+	HRESULT result = D3D12CreateDevice(adapter, featureLevel, IID_PPV_ARGS(device.GetAddressOf()));
 	assert(SUCCEEDED(result));
 
-	deviceContext->QueryInterface(IID_PPV_ARGS(&userDefinedAnnotation));
+#if _DEBUG
+	ComPtr<ID3D12InfoQueue> pInfoQueue;
+	if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(pInfoQueue.GetAddressOf()))))
+	{
+		pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
+		pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
+	}
+#endif
 
-	D3D11_VIEWPORT viewport;
+	D3D12_COMMAND_QUEUE_DESC queueDesc =
+	{
+		.Type = D3D12_COMMAND_LIST_TYPE_DIRECT,
+		.NodeMask = 1
+	};
+	result = device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(cmdQueue.GetAddressOf()));
+	assert(SUCCEEDED(result));
+
+	fenceLastSignalVal = 0;
+	result = device->CreateFence(fenceLastSignalVal, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.GetAddressOf()));
+	assert(SUCCEEDED(result));
+
+	fenceEvent = CreateEvent(nullptr, false, false, nullptr);
+	assert(fenceEvent);
+
+	result = device->CreateCommandAllocator(queueDesc.Type, IID_PPV_ARGS(cmdAllocator.GetAddressOf()));
+	assert(SUCCEEDED(result));
+
+	result = device->CreateCommandList(
+		0,
+		queueDesc.Type,
+		cmdAllocator.Get(),
+		nullptr,
+		IID_PPV_ARGS(cmdList.GetAddressOf()));
+	assert(SUCCEEDED(result));
+	cmdList->Close();
+
+	DXGI_SWAP_CHAIN_DESC1 swapDesc = {
+		.Width = resolution.x,
+		.Height = resolution.y,
+		.Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+		.SampleDesc = {
+			.Count = 1,
+			.Quality = 0},
+		.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT, // RT needed for GDI text output
+		.BufferCount = 2,
+		.Scaling = DXGI_SCALING_NONE,
+		.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL,
+		.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH };
+
+	result = GDXGIFactory->CreateSwapChainForHwnd(
+		cmdQueue.Get(),
+		window,
+		&swapDesc,
+		nullptr,
+		nullptr,
+		swapChain.GetAddressOf());
+	assert(SUCCEEDED(result));
+
+	D3D12_QUERY_HEAP_DESC queryHeapDesc = {
+		.Type = D3D12_QUERY_HEAP_TYPE_TIMESTAMP,
+		.Count = (UINT)queries.size() * 2};
+	result = device->CreateQueryHeap(&queryHeapDesc, IID_PPV_ARGS(queryHeap.GetAddressOf()));
+	assert(SUCCEEDED(result));
+
+	D3D12_RESOURCE_DESC resourceDesc = InitBufferResourceDesc(queryHeapDesc.Count * sizeof(uint64_t));
+	D3D12_HEAP_PROPERTIES heapProps = { .Type = D3D12_HEAP_TYPE_READBACK };
+	result = device->CreateCommittedResource(
+		&heapProps,
+		D3D12_HEAP_FLAG_NONE,
+		&resourceDesc,
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		nullptr,
+		IID_PPV_ARGS(queryResultBuffer.GetAddressOf()));
+	assert(SUCCEEDED(result));
+
+	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {
+		.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+		.NumDescriptors = 100'000,
+		.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE};
+	result = device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(cbvSrvUavDescriptorHeap.GetAddressOf()));
+
+	heapDesc = {
+		.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
+		.NumDescriptors = 1'000,
+		.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE };
+	result = device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(samplerDescriptorHeap.GetAddressOf()));
+}
+
+DirectXDevice::~DirectXDevice()
+{
+	cmdQueue->Signal(fence.Get(), ++fenceLastSignalVal);
+	HRESULT hr = fence->SetEventOnCompletion(fenceLastSignalVal, fenceEvent);
+	assert(SUCCEEDED(hr));
+	WaitForSingleObject(fenceEvent, INFINITE);
+
+	CloseHandle(fenceEvent);
+}
+
+ComPtr<ID3D12Resource> DirectXDevice::createConstantBuffer(unsigned bytes)
+{
+	auto resourceDesc = InitBufferResourceDesc(Align(bytes, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT));
+	D3D12_HEAP_PROPERTIES heapProps = { .Type = D3D12_HEAP_TYPE_UPLOAD };
+	ComPtr<ID3D12Resource> resource;
+	HRESULT result = device->CreateCommittedResource(
+		&heapProps,
+		D3D12_HEAP_FLAG_NONE,
+		&resourceDesc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(resource.GetAddressOf()));
+	assert(SUCCEEDED(result));
+	return resource;
+}
+
+ComPtr<ID3D12Resource> DirectXDevice::createBuffer(unsigned numElements, unsigned strideBytes)
+{
+	auto resourceDesc = InitBufferResourceDesc(strideBytes * numElements);
+	resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+	D3D12_HEAP_PROPERTIES heapProps = { .Type = D3D12_HEAP_TYPE_DEFAULT };
+	ComPtr<ID3D12Resource> resource;
+	HRESULT result = device->CreateCommittedResource(
+		&heapProps,
+		D3D12_HEAP_FLAG_NONE,
+		&resourceDesc,
+		D3D12_RESOURCE_STATE_COMMON,
+		nullptr,
+		IID_PPV_ARGS(resource.GetAddressOf()));
+	assert(SUCCEEDED(result));
+	return resource;
+}
+
+ComPtr<ID3D12Resource> DirectXDevice::createTexture2d(uint2 dimensions, DXGI_FORMAT format, unsigned mips)
+{
+	D3D12_RESOURCE_DESC textureDesc = {
+		.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D,
+		.Alignment = 0,
+		.Width = dimensions.x,
+		.Height = dimensions.y,
+		.DepthOrArraySize = 1,
+		.MipLevels = (UINT16)mips,
+		.Format = format,
+		.SampleDesc =
+		{
+			.Count = 1,
+			.Quality = 0,
+		},
+		.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN,
+		.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS};
+
+	D3D12_HEAP_PROPERTIES heapProps = { .Type = D3D12_HEAP_TYPE_DEFAULT };
+	ComPtr<ID3D12Resource> resource;
+	HRESULT result = device->CreateCommittedResource(
+		&heapProps,
+		D3D12_HEAP_FLAG_NONE,
+		&textureDesc,
+		D3D12_RESOURCE_STATE_COMMON,
+		nullptr,
+		IID_PPV_ARGS(resource.GetAddressOf()));
+	assert(SUCCEEDED(result));
+	return resource;
+}
+
+ComPtr<ID3D12Resource> DirectXDevice::createTexture3d(uint3 dimensions, DXGI_FORMAT format, unsigned mips)
+{
+	D3D12_RESOURCE_DESC textureDesc = {
+		.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE3D,
+		.Alignment = 0,
+		.Width = dimensions.x,
+		.Height = dimensions.y,
+		.DepthOrArraySize = (UINT16)dimensions.z,
+		.MipLevels = (UINT16)mips,
+		.Format = format,
+		.SampleDesc =
+		{
+			.Count = 1,
+			.Quality = 0,
+		},
+		.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN,
+		.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS};
+
+	D3D12_HEAP_PROPERTIES heapProps = { .Type = D3D12_HEAP_TYPE_DEFAULT };
+	ComPtr<ID3D12Resource> resource;
+	HRESULT result = device->CreateCommittedResource(
+		&heapProps,
+		D3D12_HEAP_FLAG_NONE,
+		&textureDesc,
+		D3D12_RESOURCE_STATE_COMMON,
+		nullptr,
+		IID_PPV_ARGS(resource.GetAddressOf()));
+	assert(SUCCEEDED(result));
+	return resource;
+}
+
+UnorderedAccessView DirectXDevice::createUAV(ID3D12Resource *buffer)
+{
+	return UnorderedAccessView(buffer, {});
+}
+
+UnorderedAccessView DirectXDevice::createByteAddressUAV(ID3D12Resource *buffer, unsigned numElements)
+{
+	D3D12_UNORDERED_ACCESS_VIEW_DESC desc = {
+		.Format = DXGI_FORMAT_R32_TYPELESS,
+		.ViewDimension = D3D12_UAV_DIMENSION_BUFFER,
+		.Buffer = {
+			.FirstElement = 0,
+			.NumElements = numElements,
+			.Flags = D3D12_BUFFER_UAV_FLAG_RAW}};
+
+	return UnorderedAccessView(buffer, desc);
+}
+
+UnorderedAccessView DirectXDevice::createTypedUAV(ID3D12Resource *buffer, unsigned numElements, DXGI_FORMAT format)
+{
+	D3D12_UNORDERED_ACCESS_VIEW_DESC desc = {
+		.Format = format,
+		.ViewDimension = D3D12_UAV_DIMENSION_BUFFER,
+		.Buffer = {
+			.FirstElement = 0,
+			.NumElements = numElements }};
+
+	return UnorderedAccessView(buffer, desc);
+}
+
+ShaderResourceView DirectXDevice::createSRV(ID3D12Resource *resource)
+{
+	return ShaderResourceView(resource, {});
+}
+
+ShaderResourceView DirectXDevice::createTypedSRV(ID3D12Resource *buffer, unsigned numElements, DXGI_FORMAT format)
+{
+	D3D12_SHADER_RESOURCE_VIEW_DESC desc = {
+		.Format = format,
+		.ViewDimension = D3D12_SRV_DIMENSION_BUFFER,
+		.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
+		.Buffer = {
+			.FirstElement = 0,
+			.NumElements = numElements }};
+
+	return ShaderResourceView(buffer, desc);
+}
+
+ShaderResourceView DirectXDevice::createStructuredSRV(ID3D12Resource* buffer, unsigned numElements, unsigned stride)
+{
+	D3D12_SHADER_RESOURCE_VIEW_DESC desc = {
+		.Format = DXGI_FORMAT_UNKNOWN,
+		.ViewDimension = D3D12_SRV_DIMENSION_BUFFER,
+		.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
+		.Buffer =
+		{
+			.FirstElement = 0,
+			.NumElements = numElements,
+			.StructureByteStride = stride }};
+
+	return ShaderResourceView(buffer, desc);
+}
+
+ShaderResourceView DirectXDevice::createByteAddressSRV(ID3D12Resource *buffer, unsigned numElements)
+{
+	D3D12_SHADER_RESOURCE_VIEW_DESC desc = {
+		.Format = DXGI_FORMAT_R32_TYPELESS,
+		.ViewDimension = D3D12_SRV_DIMENSION_BUFFER,
+		.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
+		.Buffer =
+		{
+			.FirstElement = 0,
+			.NumElements = numElements,
+			.Flags = D3D12_BUFFER_SRV_FLAG_RAW }};
+
+	return ShaderResourceView(buffer, desc);
+}
+
+SamplerState DirectXDevice::createSampler(SamplerType type)
+{
+	D3D12_SAMPLER_DESC desc =
+	{
+		.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT,
+		.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
+		.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
+		.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
+		.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER,
+		.MaxLOD = D3D12_FLOAT32_MAX
+	};
+
+	switch (type)
+	{
+	case SamplerType::Nearest: 
+		desc.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+		break;
+
+	case SamplerType::Bilinear:
+		desc.Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+		break;
+
+	case SamplerType::Trilinear:
+		desc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+		break;
+	}
+
+	return SamplerState(desc);
+}
+
+ComputePSO DirectXDevice::createComputeShader(const std::string& name, const std::vector<unsigned char> &shaderBytes)
+{
+	return ComputePSO(device.Get(), name, shaderBytes);
+}
+
+void DirectXDevice::beginFrame()
+{
+	cmdAllocator->Reset();
+	cmdList->Reset(cmdAllocator.Get(), nullptr);
+
+	D3D12_VIEWPORT viewport;
 	viewport.Height = (float)resolution.y;
 	viewport.Width = (float)resolution.x;
 	viewport.MaxDepth = 1.0f;
 	viewport.MinDepth = 0.0f;
 	viewport.TopLeftX = 0.0f;
 	viewport.TopLeftY = 0.0f;
-	deviceContext->RSSetViewports(1, &viewport);
+	cmdList->RSSetViewports(1, &viewport);
 
-	// Queries
-	for (auto &&q : queries)
+	ID3D12DescriptorHeap* heaps[] = { cbvSrvUavDescriptorHeap.Get(), samplerDescriptorHeap.Get() };
+	cmdList->SetDescriptorHeaps(2, heaps);
+	cbvSrvUavDescriptorHeapOffset = 0;
+	samplerDescriptorHeapOffset = 0;
+
+	frameFirstQuery = queryCounter;
+}
+
+void DirectXDevice::dispatch(
+	const ComputePSO& shader,
+	uint3 resolution,
+	uint3 groupSize,
+	std::initializer_list<ID3D12Resource*> cbs,
+	std::initializer_list<const ShaderResourceView*> srvs,
+	std::initializer_list<const UnorderedAccessView*> uavs,
+	std::initializer_list<const SamplerState*> samplers)
+{
+	D3D12_CPU_DESCRIPTOR_HANDLE descriptorTablesCpu[D3D12_MAX_ROOT_COST] = {};
+	D3D12_GPU_DESCRIPTOR_HANDLE descriptorTablesGpu[D3D12_MAX_ROOT_COST] = {};
+
+	const ComputePSO::RootSignatureDesc& rootSigDesc = shader.getRootSignatureDesc();
+	for (size_t rootParamIdx = 0; rootParamIdx < rootSigDesc.size(); rootParamIdx++)
 	{
-		D3D11_QUERY_DESC desc;
-		ZeroMemory(&desc, sizeof(desc));
-		desc.Query = D3D11_QUERY_TIMESTAMP_DISJOINT;
-		device->CreateQuery(&desc, &q.disjoint);
-		desc.Query = D3D11_QUERY_TIMESTAMP;
-		device->CreateQuery(&desc, &q.start);
-		device->CreateQuery(&desc, &q.end);
-	}
-}
-
-ID3D11UnorderedAccessView* DirectXDevice::createBackBufferUAV()
-{
-	ID3D11Texture2D* backBuffer = nullptr;
-	HRESULT result = swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&backBuffer);
-	assert(SUCCEEDED(result));
-
-	ID3D11UnorderedAccessView *view = nullptr;
-	result = device->CreateUnorderedAccessView(backBuffer, nullptr, &view);
-	assert(SUCCEEDED(result));
-
-	backBuffer->Release();
-	return view;
-}
-
-ID3D11DepthStencilView* DirectXDevice::createDepthStencilView(uint2 size)
-{
-	D3D11_TEXTURE2D_DESC texDesc;
-	texDesc.ArraySize = 1;
-	texDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-	texDesc.CPUAccessFlags = 0;
-	texDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;		
-	texDesc.Width = (UINT)size.x;
-	texDesc.Height = (UINT)size.y;
-	texDesc.MipLevels = 1;
-	texDesc.MiscFlags = 0;
-	texDesc.SampleDesc.Count = 1;
-	texDesc.SampleDesc.Quality = 0;
-	texDesc.Usage = D3D11_USAGE_DEFAULT;
-
-	HRESULT result;
-
-	ID3D11Texture2D* depthStencil = nullptr;
-	result = device->CreateTexture2D(&texDesc, NULL, &depthStencil);
-	assert(SUCCEEDED(result));
-
-	D3D11_DEPTH_STENCIL_VIEW_DESC depthViewDesc;
-	depthViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	depthViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-	depthViewDesc.Flags = 0;
-	depthViewDesc.Texture2D.MipSlice = 0;
-
-	ID3D11DepthStencilView *depthStencilView = nullptr;
-	result = device->CreateDepthStencilView(depthStencil, &depthViewDesc, &depthStencilView);
-	assert(SUCCEEDED(result));
-
-	depthStencil->Release();
-	return depthStencilView;
-}
-
-ID3D11RenderTargetView* DirectXDevice::createBackBufferRTV()
-{
-	ID3D11Texture2D* backBuffer = nullptr;
-	HRESULT result = swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&backBuffer);
-	assert(SUCCEEDED(result));
-
-	ID3D11RenderTargetView *view = nullptr;
-	result = device->CreateRenderTargetView(backBuffer, nullptr, &view);
-	assert(SUCCEEDED(result));
-
-	backBuffer->Release();
-	return view;
-}
-
-ID3D11Buffer* DirectXDevice::createConstantBuffer(unsigned bytes)
-{
-	D3D11_BUFFER_DESC desc;
-	desc.ByteWidth = bytes;
-	desc.Usage = D3D11_USAGE_DYNAMIC;
-	desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	desc.MiscFlags = 0;
-	desc.StructureByteStride = 0;
-
-	ID3D11Buffer *buffer = nullptr;
-	HRESULT result = device->CreateBuffer(&desc, nullptr, &buffer);
-	assert(SUCCEEDED(result));
-	return buffer;
-}
-
-ID3D11Buffer* DirectXDevice::createBuffer(unsigned numElements, unsigned strideBytes, BufferType type)
-{
-	D3D11_BUFFER_DESC desc;
-	desc.ByteWidth = strideBytes * numElements;
-	desc.StructureByteStride = (type == BufferType::Structured) ? strideBytes : 0;
-	desc.Usage = D3D11_USAGE_DEFAULT;
-	desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
-	desc.CPUAccessFlags = 0;
-	desc.MiscFlags = 0;
-
-	if (type == BufferType::Structured) 
-		desc.MiscFlags |= D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-
-	if (type == BufferType::ByteAddress)
-		desc.MiscFlags |= D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS;
-
-	ID3D11Buffer *buffer = nullptr;
-	HRESULT result = device->CreateBuffer(&desc, nullptr, &buffer);
-	assert(SUCCEEDED(result));
-	return buffer;
-}
-
-ID3D11Texture2D* DirectXDevice::createTexture2d(uint2 dimensions, DXGI_FORMAT format, unsigned mips)
-{
-	D3D11_TEXTURE2D_DESC desc;
-	desc.Width = dimensions.x;
-	desc.Height = dimensions.y;
-	desc.ArraySize = 1;
-	desc.SampleDesc.Count = 1;
-	desc.SampleDesc.Quality = 0;
-	desc.MipLevels = mips;
-	desc.Format = format;
-	desc.Usage = D3D11_USAGE_DEFAULT;
-	desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
-	desc.CPUAccessFlags = 0;
-	desc.MiscFlags = 0;
-
-	ID3D11Texture2D *texture = nullptr;
-	HRESULT result = device->CreateTexture2D(&desc, nullptr, &texture);
-	assert(SUCCEEDED(result));
-	return texture;
-}
-
-ID3D11Texture3D* DirectXDevice::createTexture3d(uint3 dimensions, DXGI_FORMAT format, unsigned mips)
-{
-	D3D11_TEXTURE3D_DESC desc;
-	desc.Width = dimensions.x;
-	desc.Height = dimensions.y;
-	desc.Depth = dimensions.z;
-	desc.MipLevels = mips;
-	desc.Format = format;
-	desc.Usage = D3D11_USAGE_DEFAULT;
-	desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
-	desc.CPUAccessFlags = 0;
-	desc.MiscFlags = 0;
-
-	ID3D11Texture3D *texture = nullptr;
-	HRESULT result = device->CreateTexture3D(&desc, nullptr, &texture);
-	assert(SUCCEEDED(result));
-	return texture;
-}
-
-ID3D11UnorderedAccessView* DirectXDevice::createUAV(ID3D11Resource *buffer)
-{
-	ID3D11UnorderedAccessView *view = nullptr;
-	HRESULT result = device->CreateUnorderedAccessView(buffer, nullptr, &view);
-	assert(SUCCEEDED(result));
-	return view;
-}
-
-ID3D11UnorderedAccessView* DirectXDevice::createByteAddressUAV(ID3D11Resource *buffer, unsigned numElements)
-{
-	D3D11_UNORDERED_ACCESS_VIEW_DESC desc;
-	desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
-	desc.Format = DXGI_FORMAT_R32_TYPELESS;
-	desc.Buffer.FirstElement = 0;
-	desc.Buffer.NumElements = numElements;
-	desc.Buffer.Flags = D3D11_BUFFER_UAV_FLAG_RAW;
-
-	ID3D11UnorderedAccessView *view = nullptr;
-	HRESULT result = device->CreateUnorderedAccessView(buffer, &desc, &view);
-	assert(SUCCEEDED(result));
-	return view;
-}
-
-ID3D11UnorderedAccessView* DirectXDevice::createTypedUAV(ID3D11Resource *buffer, unsigned numElements, DXGI_FORMAT format)
-{
-	D3D11_UNORDERED_ACCESS_VIEW_DESC desc;
-	desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
-	desc.Format = format;
-	desc.Buffer.FirstElement = 0;
-	desc.Buffer.NumElements = numElements;
-	desc.Buffer.Flags = 0;
-
-	ID3D11UnorderedAccessView *view = nullptr;
-	HRESULT result = device->CreateUnorderedAccessView(buffer, &desc, &view);
-	assert(SUCCEEDED(result));
-	return view;
-}
-
-ID3D11ShaderResourceView* DirectXDevice::createSRV(ID3D11Resource *resource)
-{
-	ID3D11ShaderResourceView *view = nullptr;
-	HRESULT result = device->CreateShaderResourceView(resource, nullptr, &view);
-	assert(SUCCEEDED(result));
-	return view;
-}
-
-ID3D11ShaderResourceView* DirectXDevice::createTypedSRV(ID3D11Resource *buffer, unsigned numElements, DXGI_FORMAT format)
-{
-	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
-	desc.ViewDimension = D3D_SRV_DIMENSION_BUFFER;
-	desc.Format = format;
-	desc.Buffer.FirstElement = 0;
-	desc.Buffer.NumElements = numElements;
-
-	ID3D11ShaderResourceView *view = nullptr;
-	HRESULT result = device->CreateShaderResourceView(buffer, &desc, &view);
-	assert(SUCCEEDED(result));
-	return view;
-}
-
-ID3D11ShaderResourceView* DirectXDevice::createStructuredSRV(ID3D11Resource* buffer, unsigned numElements, unsigned stride)
-{
-	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
-	desc.ViewDimension = D3D_SRV_DIMENSION_BUFFER;
-	desc.Format = DXGI_FORMAT_UNKNOWN;
-	desc.Buffer.FirstElement = 0;
-	desc.Buffer.NumElements = numElements;
-
-	ID3D11ShaderResourceView *view = nullptr;
-	HRESULT result = device->CreateShaderResourceView(buffer, &desc, &view);
-	assert(SUCCEEDED(result));
-	return view;
-}
-
-ID3D11ShaderResourceView* DirectXDevice::createByteAddressSRV(ID3D11Resource *buffer, unsigned numElements)
-{
-	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
-	desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
-	desc.Format = DXGI_FORMAT_R32_TYPELESS;
-	desc.BufferEx.FirstElement = 0;
-	desc.BufferEx.NumElements = numElements;
-	desc.BufferEx.Flags = D3D11_BUFFEREX_SRV_FLAG_RAW;
-
-	ID3D11ShaderResourceView *view = nullptr;
-	HRESULT result = device->CreateShaderResourceView(buffer, &desc, &view);
-	assert(SUCCEEDED(result));
-	return view;
-}
-
-ID3D11SamplerState* DirectXDevice::createSampler(SamplerType type)
-{
-	D3D11_SAMPLER_DESC desc;
-	ZeroMemory(&desc, sizeof(desc));
-	desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-	desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-	desc.MaxLOD = D3D11_FLOAT32_MAX;
-
-	switch (type)
-	{
-	case SamplerType::Nearest: 
-		desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-		break;
-
-	case SamplerType::Bilinear:
-		desc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-		break;
-
-	case SamplerType::Trilinear:
-		desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		break;
+		const ComputePSO::RootParameter& rootParam = rootSigDesc[rootParamIdx];
+		if (rootParam.type == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE)
+		{
+			uint32_t& heapOffset = rootParam.isSamplerDescriptorTable ? samplerDescriptorHeapOffset : cbvSrvUavDescriptorHeapOffset;
+			uint32_t tableOffset = heapOffset;
+			heapOffset += rootParam.numDescriptors;
+			ID3D12DescriptorHeap* heap = rootParam.isSamplerDescriptorTable ? samplerDescriptorHeap.Get() : cbvSrvUavDescriptorHeap.Get();
+			uint32_t descriptorSize = device->GetDescriptorHandleIncrementSize(
+				rootParam.isSamplerDescriptorTable ? D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER : D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			descriptorTablesCpu[rootParamIdx] = { heap->GetCPUDescriptorHandleForHeapStart().ptr + descriptorSize * tableOffset };
+			descriptorTablesGpu[rootParamIdx] = { heap->GetGPUDescriptorHandleForHeapStart().ptr + descriptorSize * tableOffset };
+		}
 	}
 
-	ID3D11SamplerState *sampler = nullptr;
-	HRESULT result = device->CreateSamplerState(&desc, &sampler);
-	assert(SUCCEEDED(result));
-	return sampler;
-}
+	cmdList->SetComputeRootSignature(shader.getRootSignature());
 
-ID3D11ComputeShader* DirectXDevice::createComputeShader(const std::string& name, const std::vector<unsigned char> &shaderBytes)
-{
-	ID3D11ComputeShader* shader = nullptr;
-	HRESULT result = device->CreateComputeShader(shaderBytes.data(), shaderBytes.size(), nullptr, &shader);
-	assert(SUCCEEDED(result));
-	shader->SetPrivateData(WKPDID_D3DDebugObjectName, (UINT)name.length(), name.c_str());
-	return shader;
-}
-
-void DirectXDevice::dispatch(ID3D11ComputeShader *shader, uint3 resolution, uint3 groupSize,
-								std::initializer_list<ID3D11Buffer*> cbs,
-								std::initializer_list<ID3D11ShaderResourceView*> srvs,
-								std::initializer_list<ID3D11UnorderedAccessView*> uavs,
-								std::initializer_list<ID3D11SamplerState*> samplers)
-{
-	// Set resources
-	if(cbs.size())
+	auto bindResources = [this, shader, &descriptorTablesCpu]<typename T>(std::initializer_list<T> resources)
 	{
-		ID3D11Buffer* cbarray[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT];
-		int slot = 0;
-		for(auto cb : cbs)
-			cbarray[slot++] = cb;
-		deviceContext->CSSetConstantBuffers(0, static_cast<UINT>(cbs.size()), cbarray);
+		ComputePSO::EBindingType bindingType = {};
+		if constexpr (std::is_same_v<T, ID3D12Resource*>)
+			bindingType = ComputePSO::EBindingType::kCbv;
+		else if constexpr (std::is_same_v<T, const ShaderResourceView*>)
+			bindingType = ComputePSO::EBindingType::kSrv;
+		else if constexpr (std::is_same_v<T, const UnorderedAccessView*>)
+			bindingType = ComputePSO::EBindingType::kUav;
+		else if constexpr (std::is_same_v<T, const SamplerState*>)
+			bindingType = ComputePSO::EBindingType::kSampler;
+		else
+			assert(false);
+
+		for (size_t idx = 0; idx < resources.size(); idx++)
+		{
+			auto& resource = resources.begin()[idx];
+			const ComputePSO::Binding* binding = shader.getBinding((uint32_t)idx, bindingType);
+			if (!binding)
+				continue;
+
+			if (binding->isRootDescriptor)
+			{
+				if constexpr (std::is_same_v<T, ID3D12Resource*>)
+					cmdList->SetComputeRootConstantBufferView(binding->rootParamIdx, resource->GetGPUVirtualAddress());
+				else if constexpr (std::is_same_v<T, const ShaderResourceView*>)
+					cmdList->SetComputeRootShaderResourceView(binding->rootParamIdx, resource->resource->GetGPUVirtualAddress());
+				else if constexpr (std::is_same_v<T, const UnorderedAccessView*>)
+					cmdList->SetComputeRootUnorderedAccessView(binding->rootParamIdx, resource->resource->GetGPUVirtualAddress());
+				else
+					static_assert("Unknown type");
+			}
+			else
+			{
+				uint32_t descriptorSize = device->GetDescriptorHandleIncrementSize(
+					bindingType == ComputePSO::EBindingType::kSampler ? D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER : D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+				D3D12_CPU_DESCRIPTOR_HANDLE descriptorAddr = { descriptorTablesCpu[binding->rootParamIdx].ptr + binding->descriptorOffset * descriptorSize };
+
+				if constexpr (std::is_same_v<T, ID3D12Resource*>)
+				{
+					D3D12_CONSTANT_BUFFER_VIEW_DESC desc = {
+						.BufferLocation = resource->GetGPUVirtualAddress(),
+						.SizeInBytes = (UINT)resource->GetDesc().Width };
+					device->CreateConstantBufferView(&desc, descriptorAddr);
+				}
+				else if constexpr (std::is_same_v<T, const ShaderResourceView*>)
+				{
+					device->CreateShaderResourceView(
+						resource->resource,
+						resource->desc.has_value() ? &resource->desc.value() : nullptr,
+						descriptorAddr);
+				}
+				else if constexpr (std::is_same_v<T, const UnorderedAccessView*>)
+				{
+					device->CreateUnorderedAccessView(
+						resource->resource,
+						nullptr,
+						resource->desc.has_value() ? &resource->desc.value() : nullptr,
+						descriptorAddr);
+				}
+				else if constexpr (std::is_same_v<T, const SamplerState*>)
+				{
+					device->CreateSampler(&resource->samplerDesc, descriptorAddr);
+				}
+				else
+					static_assert("Unknown type");
+			}
+		}
+	};
+
+	bindResources(cbs);
+	bindResources(srvs);
+	bindResources(uavs);
+	bindResources(samplers);
+
+	for (size_t rootParamIdx = 0; rootParamIdx < rootSigDesc.size(); rootParamIdx++)
+	{
+		const ComputePSO::RootParameter& rootParam = rootSigDesc[rootParamIdx];
+		if (rootParam.type == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE)
+			cmdList->SetComputeRootDescriptorTable((UINT)rootParamIdx, descriptorTablesGpu[rootParamIdx]);
 	}
 
-	if(srvs.size())
-	{
-		ID3D11ShaderResourceView* srvarray[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
-		int slot = 0;
-		for(auto srv : srvs)
-			srvarray[slot++] = srv;
-		deviceContext->CSSetShaderResources(0, static_cast<UINT>(srvs.size()), srvarray);
-	}
-
-	if(uavs.size())
-	{
-		ID3D11UnorderedAccessView* uavarray[D3D11_1_UAV_SLOT_COUNT];
-		int slot = 0;
-		for(auto uav : uavs)
-			uavarray[slot++] = uav;
-		deviceContext->CSSetUnorderedAccessViews(0, static_cast<UINT>(uavs.size()), uavarray, nullptr);
-	}
-
-	if(samplers.size())
-	{
-		ID3D11SamplerState *samplerarray[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT];
-		int slot = 0;
-		for(auto sampler : samplers)
-			samplerarray[slot++] = sampler;
-		deviceContext->CSSetSamplers(0, static_cast<UINT>(samplers.size()), samplerarray);
-	}
-
-	// Render
+	cmdList->SetPipelineState(shader.getPso());
 	uint3 groups = divRoundUp(resolution, groupSize);
-	deviceContext->CSSetShader(shader, nullptr, 0);
-	deviceContext->Dispatch(groups.x, groups.y, groups.z);
+	cmdList->Dispatch(groups.x, groups.y, groups.z);
 
-	// Remove resources
-	if(cbs.size())
+	D3D12_RESOURCE_BARRIER barrier =
 	{
-		ID3D11Buffer* cbarray[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT] = { 0 };
-		deviceContext->CSSetConstantBuffers(0, static_cast<UINT>(cbs.size()), cbarray);
-	}
-
-	if(srvs.size())
-	{
-		ID3D11ShaderResourceView* srvarray[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = { 0 };
-		deviceContext->CSSetShaderResources(0, static_cast<UINT>(srvs.size()), srvarray);
-	}
-
-	if(uavs.size())
-	{
-		ID3D11UnorderedAccessView* uavarray[D3D11_1_UAV_SLOT_COUNT] = { 0 };
-		deviceContext->CSSetUnorderedAccessViews(0, static_cast<UINT>(uavs.size()), uavarray, nullptr);
-	}
-
-	if(samplers.size())
-	{
-		ID3D11SamplerState *samplerarray[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = { 0 };
-		deviceContext->CSSetSamplers(0, static_cast<UINT>(samplers.size()), samplerarray);
-	}
-}
-
-void DirectXDevice::clear(ID3D11RenderTargetView *rtv, const float4 &color)
-{
-	float clearColor[4] = { color.x, color.y, color.z, color.w };
-	deviceContext->ClearRenderTargetView(rtv, clearColor);
-}
-
-void DirectXDevice::clearDepth(ID3D11DepthStencilView *depthStencilView)
-{
-	deviceContext->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 0.0f, (UINT8)0);
-}
-
-void DirectXDevice::setRenderTargets(std::initializer_list<ID3D11RenderTargetView*> rtvs, ID3D11DepthStencilView *depthStencilView)
-{
-	if (rtvs.size())
-	{
-		ID3D11RenderTargetView* rtvarray[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT];
-		int slot = 0;
-		for (auto rtv : rtvs)
-			rtvarray[slot++] = rtv;
-		deviceContext->OMSetRenderTargets(static_cast<UINT>(rtvs.size()), rtvarray, depthStencilView);
-	}
+		.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV
+	};
+	cmdList->ResourceBarrier(1, &barrier);
 }
 
 void DirectXDevice::presentFrame()
 {
+	uint32_t firstIdx = frameFirstQuery % queries.size();
+	uint32_t remain = queryCounter - frameFirstQuery;
+	while (remain)
+	{
+		uint32_t num = remain;
+		if (firstIdx + remain > queries.size())
+			num = queries.size() - firstIdx;
+
+		cmdList->ResolveQueryData(
+			queryHeap.Get(),
+			D3D12_QUERY_TYPE_TIMESTAMP,
+			firstIdx * 2,
+			num * 2,
+			queryResultBuffer.Get(),
+			firstIdx * sizeof(uint64_t) * 2);
+
+		firstIdx = (firstIdx + num) % queries.size();
+		remain -= num;
+	}
+	cmdList->Close();
+
+	auto cmdListToSubmit = (ID3D12CommandList*)cmdList.Get();
+	cmdQueue->ExecuteCommandLists(1, &cmdListToSubmit);
+
 	const bool vsync = false;
 	swapChain->Present(vsync ? 1 : 0, 0);
-}
 
-void DirectXDevice::clearUAV(ID3D11UnorderedAccessView* uav, std::array<float, 4> color)
-{
-	deviceContext->ClearUnorderedAccessViewFloat(uav, color.data());
+	cmdQueue->Signal(fence.Get(), ++fenceLastSignalVal);
+	HRESULT hr = fence->SetEventOnCompletion(fenceLastSignalVal, fenceEvent);
+	assert(SUCCEEDED(hr));
+	WaitForSingleObject(fenceEvent, INFINITE);
 }
 
 QueryHandle DirectXDevice::startPerformanceQuery(unsigned id, const std::string& name)
 {
-	if (userDefinedAnnotation)
-	{
-		std::vector<wchar_t> wname;
-		wname.resize(name.length() + 1);
-		size_t wnameLen = 0;
-		mbstowcs_s(&wnameLen, wname.data(), wname.size(), name.c_str(), name.length());
-		userDefinedAnnotation->BeginEvent((const wchar_t*)wname.data());
-	}
-
-	PerformanceQuery& query = queries[queryCounter % queries.size()];	
+	PIXBeginEvent(cmdList.Get(), 0xffff00ff, name.c_str());
+	
+	uint32_t queryIndex = queryCounter % queries.size();
+	PerformanceQuery& query = queries[queryIndex];
 	
 	query.id = id;
 	query.name = name;
-	deviceContext->Begin(query.disjoint);
-	deviceContext->End(query.start);	// NOTE: timestamp queries don't use Begin(), only End()
-	
-	QueryHandle out {queryCounter};
-	queryCounter++;
-	return out;
+
+	cmdList->EndQuery(queryHeap.Get(), D3D12_QUERY_TYPE_TIMESTAMP, queryIndex * 2);
+
+	return {queryCounter++};
 }
 
 void DirectXDevice::endPerformanceQuery(QueryHandle queryHandle)
 {
-	PerformanceQuery& query = queries[queryHandle.queryIndex % queries.size()];
+	cmdList->EndQuery(
+		queryHeap.Get(),
+		D3D12_QUERY_TYPE_TIMESTAMP,
+		(queryHandle.queryIndex % queries.size()) * 2 + 1);
 
-	deviceContext->End(query.end);	// NOTE: timestamp queries don't use Begin(), only End()
-	deviceContext->End(query.disjoint);
-
-	if (userDefinedAnnotation)
-		userDefinedAnnotation->EndEvent();
+	PIXEndEvent(cmdList.Get());
 }
 
 void DirectXDevice::processPerformanceResults(const std::function<void(float, unsigned, std::string&)>& functor)
 {
-	while(true)
+	uint64_t* results = nullptr;
+	HRESULT hr = queryResultBuffer->Map(0, nullptr, (void**)&results);
+	assert(SUCCEEDED(hr));
+
+	uint64_t frequency;
+	hr = cmdQueue->GetTimestampFrequency(&frequency);
+	assert(SUCCEEDED(hr));
+
+	for (uint32_t idx = frameFirstQuery; idx < queryCounter; idx++)
 	{
-		PerformanceQuery& query = queries[queryProcessCounter % queries.size()];
+		uint32_t queryIdx = idx % queries.size();
+		PerformanceQuery& query = queries[queryIdx];
+		uint64_t start = results[queryIdx * 2];
+		uint64_t end = results[queryIdx * 2 + 1];
 
-		D3D11_QUERY_DATA_TIMESTAMP_DISJOINT disjoint;
-		bool succDisjoint = deviceContext->GetData(query.disjoint, &disjoint, sizeof(disjoint), 0) == S_OK;
+		UINT64 d = end - start;
+		float delta = (float(d) / float(frequency)) * 1000.0f;
 
-		UINT64 start = 0;
-		UINT64 end = 0;
-		bool succStart = deviceContext->GetData(query.start, &start, sizeof(start), 0) == S_OK;
-		bool succEnd = deviceContext->GetData(query.end, &end, sizeof(end), 0) == S_OK;
-
-		// Wait until all queries are ready
-		if (!succDisjoint || !succStart || !succEnd)
-			break;
-
-		if (!disjoint.Disjoint)
-		{
-			UINT64 d = end - start;
-			float delta = (float(d) / float(disjoint.Frequency)) * 1000.0f;
-
-			// Call functor to process results
-			functor(delta, query.id, query.name);
-		}
-
-		queryProcessCounter++;
+		// Call functor to process results
+		functor(delta, query.id, query.name);
 	}
+
+	queryResultBuffer->Unmap(0, nullptr);
 }
