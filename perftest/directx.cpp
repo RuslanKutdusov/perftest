@@ -63,6 +63,8 @@ DirectXDevice::DirectXDevice(HWND window, uint2 resolution, IDXGIAdapter* adapte
 
 	assert(SUCCEEDED(result));
 
+	deviceContext->QueryInterface(IID_PPV_ARGS(&userDefinedAnnotation));
+
 	D3D11_VIEWPORT viewport;
 	viewport.Height = (float)resolution.y;
 	viewport.Width = (float)resolution.x;
@@ -347,11 +349,12 @@ ID3D11SamplerState* DirectXDevice::createSampler(SamplerType type)
 	return sampler;
 }
 
-ID3D11ComputeShader* DirectXDevice::createComputeShader(const std::vector<unsigned char> &shaderBytes)
+ID3D11ComputeShader* DirectXDevice::createComputeShader(const std::string& name, const std::vector<unsigned char> &shaderBytes)
 {
 	ID3D11ComputeShader* shader = nullptr;
 	HRESULT result = device->CreateComputeShader(shaderBytes.data(), shaderBytes.size(), nullptr, &shader);
 	assert(SUCCEEDED(result));
+	shader->SetPrivateData(WKPDID_D3DDebugObjectName, (UINT)name.length(), name.c_str());
 	return shader;
 }
 
@@ -465,6 +468,15 @@ void DirectXDevice::clearUAV(ID3D11UnorderedAccessView* uav, std::array<float, 4
 
 QueryHandle DirectXDevice::startPerformanceQuery(unsigned id, const std::string& name)
 {
+	if (userDefinedAnnotation)
+	{
+		std::vector<wchar_t> wname;
+		wname.resize(name.length() + 1);
+		size_t wnameLen = 0;
+		mbstowcs_s(&wnameLen, wname.data(), wname.size(), name.c_str(), name.length());
+		userDefinedAnnotation->BeginEvent((const wchar_t*)wname.data());
+	}
+
 	PerformanceQuery& query = queries[queryCounter % queries.size()];	
 	
 	query.id = id;
@@ -483,6 +495,9 @@ void DirectXDevice::endPerformanceQuery(QueryHandle queryHandle)
 
 	deviceContext->End(query.end);	// NOTE: timestamp queries don't use Begin(), only End()
 	deviceContext->End(query.disjoint);
+
+	if (userDefinedAnnotation)
+		userDefinedAnnotation->EndEvent();
 }
 
 void DirectXDevice::processPerformanceResults(const std::function<void(float, unsigned, std::string&)>& functor)

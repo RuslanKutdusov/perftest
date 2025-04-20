@@ -2,7 +2,7 @@
 #include "datatypes.h"
 #include "com_ptr.h"
 #include <windows.h>
-#include <d3d11.h>
+#include <d3d11_1.h>
 #include <vector>
 #include <array>
 #include <functional>
@@ -49,7 +49,7 @@ public:
 	ID3D11UnorderedAccessView* createBackBufferUAV();
 	ID3D11DepthStencilView* createDepthStencilView(uint2 size);
 	ID3D11RenderTargetView* DirectXDevice::createBackBufferRTV();
-	ID3D11ComputeShader* createComputeShader(const std::vector<unsigned char>& shaderBytes);
+	ID3D11ComputeShader* createComputeShader(const std::string& name, const std::vector<unsigned char>& shaderBytes);
 
 	ID3D11Buffer* createConstantBuffer(unsigned bytes);
 	ID3D11Buffer* createBuffer(unsigned numElements, unsigned strideBytes, BufferType type = BufferType::Default);
@@ -109,6 +109,7 @@ private:
 	com_ptr<IDXGISwapChain> swapChain;
 	com_ptr<ID3D11Device> device;
 	com_ptr<ID3D11DeviceContext> deviceContext;
+	com_ptr<ID3DUserDefinedAnnotation> userDefinedAnnotation;
 
 	// Queries
 	std::array<PerformanceQuery, 4096> queries;
