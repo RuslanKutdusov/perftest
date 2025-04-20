@@ -3,6 +3,7 @@
 #include "graphicsUtil.h"
 #include "loadConstantsGPU.h"
 #include <map>
+#include <cmath>
 
 class BenchTest
 {
@@ -207,7 +208,8 @@ int main(int argc, char *argv[])
 	struct TestCaseTiming
 	{
 		std::string name;
-		float totalTime;
+		float totalTime = 0.0f;
+		std::vector<float> timings;
 	};
 
 	std::array<TestCaseTiming, maxTestCases> timingResults;
@@ -226,6 +228,7 @@ int main(int argc, char *argv[])
 					timingResults[id] = { name, 0 };
 				}
 				timingResults[id].totalTime += timeMillis;
+				timingResults[id].timings.push_back(timeMillis);
 			}
 		});
 
@@ -418,7 +421,18 @@ int main(int argc, char *argv[])
 	for (auto&& row : timingResults)
 	{
 		if (row.name == "") break;
-		printf("%s: %.3fms %.3fx\n", row.name.c_str(), row.totalTime, compareToTime / row.totalTime);
+		float average = row.totalTime / row.timings.size();
+		float stdDev = 0.0f;
+		for (float t : row.timings)
+			stdDev += std::powf(t - average, 2.0f);
+		stdDev = std::sqrtf(stdDev / row.timings.size());
+		printf(
+			"%s: %.3fms %.3fms %.3fms %.3fx\n",
+			row.name.c_str(),
+			row.totalTime,
+			average,
+			stdDev,
+			compareToTime / row.totalTime);
 	}
 
 	return 0;
