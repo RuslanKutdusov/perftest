@@ -601,6 +601,148 @@ Texture2D<RGBA32F>.Load random: 12.804ms 0.985x
 ```
 **AMD Navi** TODO.
 
+### AMD Navi 2 (RX 6600) Dx12+Dxc
+```markdown
+Buffer<R8>.Load uniform: 5.486ms 0.183ms 0.000ms 2.596x
+Buffer<R8>.Load linear: 5.884ms 0.196ms 0.007ms 2.421x
+Buffer<R8>.Load random: 5.263ms 0.175ms 0.000ms 2.706x
+Buffer<RG8>.Load uniform: 7.447ms 0.248ms 0.004ms 1.912x
+Buffer<RG8>.Load linear: 7.660ms 0.255ms 0.004ms 1.859x
+Buffer<RG8>.Load random: 7.617ms 0.254ms 0.001ms 1.870x
+Buffer<RGBA8>.Load uniform: 13.659ms 0.455ms 0.001ms 1.043x
+Buffer<RGBA8>.Load linear: 14.304ms 0.477ms 0.006ms 0.996x
+Buffer<RGBA8>.Load random: 14.242ms 0.475ms 0.001ms 1.000x
+Buffer<R16f>.Load uniform: 6.374ms 0.212ms 0.063ms 2.234x
+Buffer<R16f>.Load linear: 5.305ms 0.177ms 0.007ms 2.685x
+Buffer<R16f>.Load random: 6.765ms 0.225ms 0.078ms 2.105x
+Buffer<RG16f>.Load uniform: 8.138ms 0.271ms 0.066ms 1.750x
+Buffer<RG16f>.Load linear: 7.581ms 0.253ms 0.004ms 1.879x
+Buffer<RG16f>.Load random: 7.224ms 0.241ms 0.040ms 1.971x
+Buffer<RGBA16f>.Load uniform: 14.570ms 0.486ms 0.056ms 0.977x
+Buffer<RGBA16f>.Load linear: 14.621ms 0.487ms 0.045ms 0.974x
+Buffer<RGBA16f>.Load random: 14.248ms 0.475ms 0.001ms 1.000x
+Buffer<R32f>.Load uniform: 5.125ms 0.171ms 0.000ms 2.779x
+Buffer<R32f>.Load linear: 5.872ms 0.196ms 0.003ms 2.425x
+Buffer<R32f>.Load random: 5.880ms 0.196ms 0.001ms 2.422x
+Buffer<RG32f>.Load uniform: 7.474ms 0.249ms 0.001ms 1.906x
+Buffer<RG32f>.Load linear: 6.962ms 0.232ms 0.000ms 2.046x
+Buffer<RG32f>.Load random: 7.633ms 0.254ms 0.001ms 1.866x
+Buffer<RGBA32f>.Load uniform: 14.517ms 0.484ms 0.042ms 0.981x
+Buffer<RGBA32f>.Load linear: 14.454ms 0.482ms 0.002ms 0.985x
+Buffer<RGBA32f>.Load random: 13.974ms 0.466ms 0.043ms 1.019x
+ByteAddressBuffer.Load uniform: 8.129ms 0.271ms 0.001ms 1.752x
+ByteAddressBuffer.Load linear: 6.275ms 0.209ms 0.001ms 2.270x
+ByteAddressBuffer.Load random: 5.941ms 0.198ms 0.001ms 2.397x
+ByteAddressBuffer.Load2 uniform: 7.758ms 0.259ms 0.001ms 1.836x
+ByteAddressBuffer.Load2 linear: 8.005ms 0.267ms 0.001ms 1.779x
+ByteAddressBuffer.Load2 random: 7.686ms 0.256ms 0.001ms 1.853x
+ByteAddressBuffer.Load3 uniform: 8.614ms 0.287ms 0.050ms 1.653x
+ByteAddressBuffer.Load3 linear: 17.324ms 0.577ms 0.005ms 0.822x
+ByteAddressBuffer.Load3 random: 27.938ms 0.931ms 0.003ms 0.510x
+ByteAddressBuffer.Load4 uniform: 8.838ms 0.295ms 0.040ms 1.611x
+ByteAddressBuffer.Load4 linear: 14.384ms 0.479ms 0.003ms 0.990x
+ByteAddressBuffer.Load4 random: 13.739ms 0.458ms 0.001ms 1.037x
+ByteAddressBuffer.Load2 unaligned uniform: 8.841ms 0.295ms 0.005ms 1.611x
+ByteAddressBuffer.Load2 unaligned linear: 14.623ms 0.487ms 0.038ms 0.974x
+ByteAddressBuffer.Load2 unaligned random: 14.369ms 0.479ms 0.002ms 0.991x
+ByteAddressBuffer.Load4 unaligned uniform: 8.303ms 0.277ms 0.052ms 1.715x
+ByteAddressBuffer.Load4 unaligned linear: 21.036ms 0.701ms 0.002ms 0.677x
+ByteAddressBuffer.Load4 unaligned random: 27.566ms 0.919ms 0.001ms 0.517x
+StructuredBuffer<float>.Load uniform: 10.128ms 0.338ms 0.039ms 1.406x
+StructuredBuffer<float>.Load linear: 5.907ms 0.197ms 0.002ms 2.411x
+StructuredBuffer<float>.Load random: 6.344ms 0.211ms 0.056ms 2.245x
+StructuredBuffer<float2>.Load uniform: 9.890ms 0.330ms 0.002ms 1.440x
+StructuredBuffer<float2>.Load linear: 7.637ms 0.255ms 0.001ms 1.865x
+StructuredBuffer<float2>.Load random: 7.002ms 0.233ms 0.000ms 2.034x
+StructuredBuffer<float4>.Load uniform: 10.471ms 0.349ms 0.053ms 1.360x
+StructuredBuffer<float4>.Load linear: 14.308ms 0.477ms 0.001ms 0.995x
+StructuredBuffer<float4>.Load random: 14.467ms 0.482ms 0.040ms 0.984x
+cbuffer{float4} load uniform: 11.762ms 0.392ms 0.004ms 1.211x
+cbuffer{float4} load linear: 15.887ms 0.530ms 0.001ms 0.896x
+cbuffer{float4} load random: 13.946ms 0.465ms 0.048ms 1.021x
+Texture2D<R8>.Load uniform: 7.705ms 0.257ms 0.002ms 1.848x
+Texture2D<R8>.Load linear: 7.764ms 0.259ms 0.004ms 1.834x
+Texture2D<R8>.Load random: 7.048ms 0.235ms 0.000ms 2.021x
+Texture2D<RG8>.Load uniform: 7.778ms 0.259ms 0.002ms 1.831x
+Texture2D<RG8>.Load linear: 8.584ms 0.286ms 0.045ms 1.659x
+Texture2D<RG8>.Load random: 8.243ms 0.275ms 0.001ms 1.728x
+Texture2D<RGBA8>.Load uniform: 14.296ms 0.477ms 0.002ms 0.996x
+Texture2D<RGBA8>.Load linear: 14.736ms 0.491ms 0.043ms 0.967x
+Texture2D<RGBA8>.Load random: 14.383ms 0.479ms 0.001ms 0.990x
+Texture2D<R16F>.Load uniform: 7.735ms 0.258ms 0.001ms 1.841x
+Texture2D<R16F>.Load linear: 7.871ms 0.262ms 0.001ms 1.809x
+Texture2D<R16F>.Load random: 7.720ms 0.257ms 0.004ms 1.845x
+Texture2D<RG16F>.Load uniform: 7.901ms 0.263ms 0.001ms 1.803x
+Texture2D<RG16F>.Load linear: 9.486ms 0.316ms 0.001ms 1.501x
+Texture2D<RG16F>.Load random: 7.742ms 0.258ms 0.001ms 1.840x
+Texture2D<RGBA16F>.Load uniform: 14.601ms 0.487ms 0.002ms 0.975x
+Texture2D<RGBA16F>.Load linear: 14.724ms 0.491ms 0.002ms 0.967x
+Texture2D<RGBA16F>.Load random: 14.600ms 0.487ms 0.001ms 0.975x
+Texture2D<R32F>.Load uniform: 7.833ms 0.261ms 0.002ms 1.818x
+Texture2D<R32F>.Load linear: 9.398ms 0.313ms 0.004ms 1.516x
+Texture2D<R32F>.Load random: 7.854ms 0.262ms 0.001ms 1.813x
+Texture2D<RG32F>.Load uniform: 7.909ms 0.264ms 0.004ms 1.801x
+Texture2D<RG32F>.Load linear: 14.557ms 0.485ms 0.004ms 0.978x
+Texture2D<RG32F>.Load random: 8.474ms 0.282ms 0.001ms 1.681x
+Texture2D<RGBA32F>.Load uniform: 14.683ms 0.489ms 0.002ms 0.970x
+Texture2D<RGBA32F>.Load linear: 14.772ms 0.492ms 0.002ms 0.964x
+Texture2D<RGBA32F>.Load random: 14.088ms 0.470ms 0.001ms 1.011x
+Texture2D<R8>.Sample(nearest) uniform: 28.607ms 0.954ms 0.003ms 0.498x
+Texture2D<R8>.Sample(nearest) linear: 28.502ms 0.950ms 0.003ms 0.500x
+Texture2D<R8>.Sample(nearest) random: 28.285ms 0.943ms 0.003ms 0.504x
+Texture2D<RG8>.Sample(nearest) uniform: 27.499ms 0.917ms 0.004ms 0.518x
+Texture2D<RG8>.Sample(nearest) linear: 28.022ms 0.934ms 0.002ms 0.508x
+Texture2D<RG8>.Sample(nearest) random: 28.157ms 0.939ms 0.044ms 0.506x
+Texture2D<RGBA8>.Sample(nearest) uniform: 27.847ms 0.928ms 0.002ms 0.511x
+Texture2D<RGBA8>.Sample(nearest) linear: 27.302ms 0.910ms 0.004ms 0.522x
+Texture2D<RGBA8>.Sample(nearest) random: 27.884ms 0.929ms 0.002ms 0.511x
+Texture2D<R16F>.Sample(nearest) uniform: 27.725ms 0.924ms 0.002ms 0.514x
+Texture2D<R16F>.Sample(nearest) linear: 27.746ms 0.925ms 0.001ms 0.513x
+Texture2D<R16F>.Sample(nearest) random: 27.107ms 0.904ms 0.001ms 0.525x
+Texture2D<RG16F>.Sample(nearest) uniform: 27.703ms 0.923ms 0.001ms 0.514x
+Texture2D<RG16F>.Sample(nearest) linear: 27.772ms 0.926ms 0.001ms 0.513x
+Texture2D<RG16F>.Sample(nearest) random: 27.756ms 0.925ms 0.003ms 0.513x
+Texture2D<RGBA16F>.Sample(nearest) uniform: 27.173ms 0.906ms 0.004ms 0.524x
+Texture2D<RGBA16F>.Sample(nearest) linear: 27.843ms 0.928ms 0.001ms 0.512x
+Texture2D<RGBA16F>.Sample(nearest) random: 27.823ms 0.927ms 0.001ms 0.512x
+Texture2D<R32F>.Sample(nearest) uniform: 27.672ms 0.922ms 0.001ms 0.515x
+Texture2D<R32F>.Sample(nearest) linear: 27.135ms 0.905ms 0.004ms 0.525x
+Texture2D<R32F>.Sample(nearest) random: 27.722ms 0.924ms 0.001ms 0.514x
+Texture2D<RG32F>.Sample(nearest) uniform: 27.695ms 0.923ms 0.001ms 0.514x
+Texture2D<RG32F>.Sample(nearest) linear: 27.794ms 0.926ms 0.001ms 0.512x
+Texture2D<RG32F>.Sample(nearest) random: 27.159ms 0.905ms 0.001ms 0.524x
+Texture2D<RGBA32F>.Sample(bilinear) uniform: 27.767ms 0.926ms 0.001ms 0.513x
+Texture2D<RGBA32F>.Sample(nearest) linear: 27.861ms 0.929ms 0.001ms 0.511x
+Texture2D<RGBA32F>.Sample(nearest) random: 27.835ms 0.928ms 0.001ms 0.512x
+Texture2D<R8>.Sample(bilinear) uniform: 27.067ms 0.902ms 0.003ms 0.526x
+Texture2D<R8>.Sample(bilinear) linear: 27.724ms 0.924ms 0.001ms 0.514x
+Texture2D<R8>.Sample(bilinear) random: 27.729ms 0.924ms 0.002ms 0.514x
+Texture2D<RG8>.Sample(bilinear) uniform: 27.700ms 0.923ms 0.001ms 0.514x
+Texture2D<RG8>.Sample(bilinear) linear: 27.180ms 0.906ms 0.004ms 0.524x
+Texture2D<RG8>.Sample(bilinear) random: 27.778ms 0.926ms 0.002ms 0.513x
+Texture2D<RGBA8>.Sample(bilinear) uniform: 27.750ms 0.925ms 0.002ms 0.513x
+Texture2D<RGBA8>.Sample(bilinear) linear: 27.830ms 0.928ms 0.001ms 0.512x
+Texture2D<RGBA8>.Sample(bilinear) random: 27.205ms 0.907ms 0.001ms 0.524x
+Texture2D<R16F>.Sample(bilinear) uniform: 27.649ms 0.922ms 0.004ms 0.515x
+Texture2D<R16F>.Sample(bilinear) linear: 27.724ms 0.924ms 0.001ms 0.514x
+Texture2D<R16F>.Sample(bilinear) random: 27.727ms 0.924ms 0.001ms 0.514x
+Texture2D<RG16F>.Sample(bilinear) uniform: 27.081ms 0.903ms 0.001ms 0.526x
+Texture2D<RG16F>.Sample(bilinear) linear: 27.765ms 0.925ms 0.004ms 0.513x
+Texture2D<RG16F>.Sample(bilinear) random: 27.766ms 0.926ms 0.001ms 0.513x
+Texture2D<RGBA16F>.Sample(bilinear) uniform: 27.767ms 0.926ms 0.001ms 0.513x
+Texture2D<RGBA16F>.Sample(bilinear) linear: 27.221ms 0.907ms 0.001ms 0.523x
+Texture2D<RGBA16F>.Sample(bilinear) random: 27.828ms 0.928ms 0.001ms 0.512x
+Texture2D<R32F>.Sample(bilinear) uniform: 27.651ms 0.922ms 0.004ms 0.515x
+Texture2D<R32F>.Sample(bilinear) linear: 27.708ms 0.924ms 0.004ms 0.514x
+Texture2D<R32F>.Sample(bilinear) random: 27.103ms 0.903ms 0.000ms 0.525x
+Texture2D<RG32F>.Sample(bilinear) uniform: 27.703ms 0.923ms 0.001ms 0.514x
+Texture2D<RG32F>.Sample(bilinear) linear: 27.780ms 0.926ms 0.002ms 0.513x
+Texture2D<RG32F>.Sample(bilinear) random: 27.771ms 0.926ms 0.001ms 0.513x
+Texture2D<RGBA32F>.Sample(bilinear) uniform: 54.000ms 1.800ms 0.001ms 0.264x
+Texture2D<RGBA32F>.Sample(bilinear) linear: 54.737ms 1.825ms 0.005ms 0.260x
+Texture2D<RGBA32F>.Sample(bilinear) random: 54.696ms 1.823ms 0.004ms 0.260x
+```
+
 ### NVidia Maxwell (GTX 980 Ti)
 ```markdown
 Buffer<R8>.Load uniform: 1.249ms 28.812x
@@ -1066,6 +1208,149 @@ Texture2D<RGBA32F>.Load random: 32.783ms 0.499x
 
 **Uniform address optimization:** Like Volta, the new uniform address optimization no longer affects StructuredBuffers. My educated guess is that StructuredBuffers (like raw buffers) now use the same lower latency direct memory path. Nvidia most likely hasn't yet implemented uniform address optimization for these new memory operations. Turing uniform address optimization performance however (in other cases) returns to similar 20x+ figures than Maxwell/Pascal.
 
+
+### NVidia Turing (RTX 2060) Dx12+Dxc
+```markdown
+Buffer<R8>.Load uniform: 42.546ms 1.418ms 0.024ms 0.974x
+Buffer<R8>.Load linear: 42.429ms 1.414ms 0.024ms 0.976x
+Buffer<R8>.Load random: 42.231ms 1.408ms 0.024ms 0.981x
+Buffer<RG8>.Load uniform: 42.098ms 1.403ms 0.028ms 0.984x
+Buffer<RG8>.Load linear: 41.970ms 1.399ms 0.024ms 0.987x
+Buffer<RG8>.Load random: 41.749ms 1.392ms 0.026ms 0.992x
+Buffer<RGBA8>.Load uniform: 42.109ms 1.404ms 0.027ms 0.984x
+Buffer<RGBA8>.Load linear: 41.704ms 1.390ms 0.024ms 0.993x
+Buffer<RGBA8>.Load random: 41.431ms 1.381ms 0.023ms 1.000x
+Buffer<R16f>.Load uniform: 41.301ms 1.377ms 0.023ms 1.003x
+Buffer<R16f>.Load linear: 41.118ms 1.371ms 0.017ms 1.008x
+Buffer<R16f>.Load random: 41.085ms 1.369ms 0.018ms 1.008x
+Buffer<RG16f>.Load uniform: 41.019ms 1.367ms 0.017ms 1.010x
+Buffer<RG16f>.Load linear: 40.915ms 1.364ms 0.013ms 1.013x
+Buffer<RG16f>.Load random: 40.896ms 1.363ms 0.013ms 1.013x
+Buffer<RGBA16f>.Load uniform: 41.213ms 1.374ms 0.013ms 1.005x
+Buffer<RGBA16f>.Load linear: 41.009ms 1.367ms 0.012ms 1.010x
+Buffer<RGBA16f>.Load random: 40.921ms 1.364ms 0.011ms 1.012x
+Buffer<R32f>.Load uniform: 40.977ms 1.366ms 0.014ms 1.011x
+Buffer<R32f>.Load linear: 41.016ms 1.367ms 0.013ms 1.010x
+Buffer<R32f>.Load random: 41.044ms 1.368ms 0.016ms 1.009x
+Buffer<RG32f>.Load uniform: 41.188ms 1.373ms 0.017ms 1.006x
+Buffer<RG32f>.Load linear: 41.307ms 1.377ms 0.023ms 1.003x
+Buffer<RG32f>.Load random: 41.455ms 1.382ms 0.022ms 0.999x
+Buffer<RGBA32f>.Load uniform: 82.315ms 2.744ms 0.050ms 0.503x
+Buffer<RGBA32f>.Load linear: 82.720ms 2.757ms 0.046ms 0.501x
+Buffer<RGBA32f>.Load random: 83.249ms 2.775ms 0.042ms 0.498x
+ByteAddressBuffer.Load uniform: 24.914ms 0.830ms 0.013ms 1.663x
+ByteAddressBuffer.Load linear: 27.733ms 0.924ms 0.010ms 1.494x
+ByteAddressBuffer.Load random: 25.408ms 0.847ms 0.008ms 1.631x
+ByteAddressBuffer.Load2 uniform: 29.087ms 0.970ms 0.008ms 1.424x
+ByteAddressBuffer.Load2 linear: 45.967ms 1.532ms 0.011ms 0.901x
+ByteAddressBuffer.Load2 random: 29.715ms 0.990ms 0.008ms 1.394x
+ByteAddressBuffer.Load3 uniform: 36.015ms 1.200ms 0.010ms 1.150x
+ByteAddressBuffer.Load3 linear: 48.069ms 1.602ms 0.010ms 0.862x
+ByteAddressBuffer.Load3 random: 40.612ms 1.354ms 0.009ms 1.020x
+ByteAddressBuffer.Load4 uniform: 42.966ms 1.432ms 0.012ms 0.964x
+ByteAddressBuffer.Load4 linear: 114.037ms 3.801ms 0.050ms 0.363x
+ByteAddressBuffer.Load4 random: 88.896ms 2.963ms 0.058ms 0.466x
+ByteAddressBuffer.Load2 unaligned uniform: 29.944ms 0.998ms 0.024ms 1.384x
+ByteAddressBuffer.Load2 unaligned linear: 47.366ms 1.579ms 0.044ms 0.875x
+ByteAddressBuffer.Load2 unaligned random: 30.523ms 1.017ms 0.026ms 1.357x
+ByteAddressBuffer.Load4 unaligned uniform: 44.288ms 1.476ms 0.042ms 0.935x
+ByteAddressBuffer.Load4 unaligned linear: 117.805ms 3.927ms 0.101ms 0.352x
+ByteAddressBuffer.Load4 unaligned random: 92.137ms 3.071ms 0.075ms 0.450x
+StructuredBuffer<float>.Load uniform: 21.173ms 0.706ms 0.018ms 1.957x
+StructuredBuffer<float>.Load linear: 24.887ms 0.830ms 0.015ms 1.665x
+StructuredBuffer<float>.Load random: 23.340ms 0.778ms 0.016ms 1.775x
+StructuredBuffer<float2>.Load uniform: 23.389ms 0.780ms 0.015ms 1.771x
+StructuredBuffer<float2>.Load linear: 26.705ms 0.890ms 0.018ms 1.551x
+StructuredBuffer<float2>.Load random: 25.050ms 0.835ms 0.015ms 1.654x
+StructuredBuffer<float4>.Load uniform: 45.781ms 1.526ms 0.026ms 0.905x
+StructuredBuffer<float4>.Load linear: 59.790ms 1.993ms 0.034ms 0.693x
+StructuredBuffer<float4>.Load random: 53.258ms 1.775ms 0.027ms 0.778x
+cbuffer{float4} load uniform: 25.805ms 0.860ms 0.015ms 1.606x
+cbuffer{float4} load linear: 1052.681ms 35.089ms 0.402ms 0.039x
+cbuffer{float4} load random: 600.614ms 20.020ms 0.306ms 0.069x
+Texture2D<R8>.Load uniform: 41.035ms 1.368ms 0.027ms 1.010x
+Texture2D<R8>.Load linear: 40.913ms 1.364ms 0.024ms 1.013x
+Texture2D<R8>.Load random: 40.795ms 1.360ms 0.013ms 1.016x
+Texture2D<RG8>.Load uniform: 40.818ms 1.361ms 0.012ms 1.015x
+Texture2D<RG8>.Load linear: 40.847ms 1.362ms 0.011ms 1.014x
+Texture2D<RG8>.Load random: 40.785ms 1.360ms 0.013ms 1.016x
+Texture2D<RGBA8>.Load uniform: 40.805ms 1.360ms 0.011ms 1.015x
+Texture2D<RGBA8>.Load linear: 41.333ms 1.378ms 0.009ms 1.002x
+Texture2D<RGBA8>.Load random: 41.057ms 1.369ms 0.009ms 1.009x
+Texture2D<R16F>.Load uniform: 40.666ms 1.356ms 0.009ms 1.019x
+Texture2D<R16F>.Load linear: 40.812ms 1.360ms 0.008ms 1.015x
+Texture2D<R16F>.Load random: 40.786ms 1.360ms 0.011ms 1.016x
+Texture2D<RG16F>.Load uniform: 40.809ms 1.360ms 0.015ms 1.015x
+Texture2D<RG16F>.Load linear: 41.111ms 1.370ms 0.012ms 1.008x
+Texture2D<RG16F>.Load random: 41.019ms 1.367ms 0.021ms 1.010x
+Texture2D<RGBA16F>.Load uniform: 41.404ms 1.380ms 0.024ms 1.001x
+Texture2D<RGBA16F>.Load linear: 42.212ms 1.407ms 0.025ms 0.982x
+Texture2D<RGBA16F>.Load random: 82.685ms 2.756ms 0.089ms 0.501x
+Texture2D<R32F>.Load uniform: 42.099ms 1.403ms 0.050ms 0.984x
+Texture2D<R32F>.Load linear: 42.544ms 1.418ms 0.052ms 0.974x
+Texture2D<R32F>.Load random: 42.721ms 1.424ms 0.057ms 0.970x
+Texture2D<RG32F>.Load uniform: 43.266ms 1.442ms 0.056ms 0.958x
+Texture2D<RG32F>.Load linear: 43.760ms 1.459ms 0.055ms 0.947x
+Texture2D<RG32F>.Load random: 86.674ms 2.889ms 0.086ms 0.478x
+Texture2D<RGBA32F>.Load uniform: 87.993ms 2.933ms 0.060ms 0.471x
+Texture2D<RGBA32F>.Load linear: 89.194ms 2.973ms 0.025ms 0.465x
+Texture2D<RGBA32F>.Load random: 89.533ms 2.984ms 0.022ms 0.463x
+Texture2D<R8>.Sample(nearest) uniform: 45.503ms 1.517ms 0.014ms 0.911x
+Texture2D<R8>.Sample(nearest) linear: 45.477ms 1.516ms 0.012ms 0.911x
+Texture2D<R8>.Sample(nearest) random: 45.390ms 1.513ms 0.011ms 0.913x
+Texture2D<RG8>.Sample(nearest) uniform: 45.568ms 1.519ms 0.010ms 0.909x
+Texture2D<RG8>.Sample(nearest) linear: 45.669ms 1.522ms 0.011ms 0.907x
+Texture2D<RG8>.Sample(nearest) random: 45.633ms 1.521ms 0.011ms 0.908x
+Texture2D<RGBA8>.Sample(nearest) uniform: 47.668ms 1.589ms 0.012ms 0.869x
+Texture2D<RGBA8>.Sample(nearest) linear: 48.155ms 1.605ms 0.013ms 0.860x
+Texture2D<RGBA8>.Sample(nearest) random: 48.043ms 1.601ms 0.014ms 0.862x
+Texture2D<R16F>.Sample(nearest) uniform: 45.443ms 1.515ms 0.013ms 0.912x
+Texture2D<R16F>.Sample(nearest) linear: 45.389ms 1.513ms 0.012ms 0.913x
+Texture2D<R16F>.Sample(nearest) random: 45.382ms 1.513ms 0.010ms 0.913x
+Texture2D<RG16F>.Sample(nearest) uniform: 45.530ms 1.518ms 0.010ms 0.910x
+Texture2D<RG16F>.Sample(nearest) linear: 45.730ms 1.524ms 0.012ms 0.906x
+Texture2D<RG16F>.Sample(nearest) random: 45.593ms 1.520ms 0.012ms 0.909x
+Texture2D<RGBA16F>.Sample(nearest) uniform: 47.595ms 1.587ms 0.015ms 0.870x
+Texture2D<RGBA16F>.Sample(nearest) linear: 48.407ms 1.614ms 0.018ms 0.856x
+Texture2D<RGBA16F>.Sample(nearest) random: 90.192ms 3.006ms 0.038ms 0.459x
+Texture2D<R32F>.Sample(nearest) uniform: 45.930ms 1.531ms 0.023ms 0.902x
+Texture2D<R32F>.Sample(nearest) linear: 46.137ms 1.538ms 0.025ms 0.898x
+Texture2D<R32F>.Sample(nearest) random: 46.184ms 1.539ms 0.022ms 0.897x
+Texture2D<RG32F>.Sample(nearest) uniform: 46.440ms 1.548ms 0.024ms 0.892x
+Texture2D<RG32F>.Sample(nearest) linear: 46.688ms 1.556ms 0.020ms 0.887x
+Texture2D<RG32F>.Sample(nearest) random: 91.388ms 3.046ms 0.033ms 0.453x
+Texture2D<RGBA32F>.Sample(bilinear) uniform: 91.601ms 3.053ms 0.029ms 0.452x
+Texture2D<RGBA32F>.Sample(nearest) linear: 91.665ms 3.055ms 0.029ms 0.452x
+Texture2D<RGBA32F>.Sample(nearest) random: 91.513ms 3.050ms 0.028ms 0.453x
+Texture2D<R8>.Sample(bilinear) uniform: 46.322ms 1.544ms 0.015ms 0.894x
+Texture2D<R8>.Sample(bilinear) linear: 46.185ms 1.540ms 0.014ms 0.897x
+Texture2D<R8>.Sample(bilinear) random: 46.078ms 1.536ms 0.015ms 0.899x
+Texture2D<RG8>.Sample(bilinear) uniform: 46.202ms 1.540ms 0.013ms 0.897x
+Texture2D<RG8>.Sample(bilinear) linear: 46.313ms 1.544ms 0.014ms 0.895x
+Texture2D<RG8>.Sample(bilinear) random: 46.112ms 1.537ms 0.016ms 0.898x
+Texture2D<RGBA8>.Sample(bilinear) uniform: 48.008ms 1.600ms 0.018ms 0.863x
+Texture2D<RGBA8>.Sample(bilinear) linear: 48.692ms 1.623ms 0.018ms 0.851x
+Texture2D<RGBA8>.Sample(bilinear) random: 48.411ms 1.614ms 0.017ms 0.856x
+Texture2D<R16F>.Sample(bilinear) uniform: 45.681ms 1.523ms 0.018ms 0.907x
+Texture2D<R16F>.Sample(bilinear) linear: 45.741ms 1.525ms 0.012ms 0.906x
+Texture2D<R16F>.Sample(bilinear) random: 45.624ms 1.521ms 0.012ms 0.908x
+Texture2D<RG16F>.Sample(bilinear) uniform: 45.744ms 1.525ms 0.010ms 0.906x
+Texture2D<RG16F>.Sample(bilinear) linear: 45.987ms 1.533ms 0.016ms 0.901x
+Texture2D<RG16F>.Sample(bilinear) random: 45.889ms 1.530ms 0.015ms 0.903x
+Texture2D<RGBA16F>.Sample(bilinear) uniform: 47.870ms 1.596ms 0.014ms 0.865x
+Texture2D<RGBA16F>.Sample(bilinear) linear: 48.595ms 1.620ms 0.015ms 0.853x
+Texture2D<RGBA16F>.Sample(bilinear) random: 90.672ms 3.022ms 0.027ms 0.457x
+Texture2D<R32F>.Sample(bilinear) uniform: 46.160ms 1.539ms 0.017ms 0.898x
+Texture2D<R32F>.Sample(bilinear) linear: 46.187ms 1.540ms 0.017ms 0.897x
+Texture2D<R32F>.Sample(bilinear) random: 46.286ms 1.543ms 0.017ms 0.895x
+Texture2D<RG32F>.Sample(bilinear) uniform: 46.592ms 1.553ms 0.014ms 0.889x
+Texture2D<RG32F>.Sample(bilinear) linear: 46.834ms 1.561ms 0.014ms 0.885x
+Texture2D<RG32F>.Sample(bilinear) random: 91.524ms 3.051ms 0.023ms 0.453x
+Texture2D<RGBA32F>.Sample(bilinear) uniform: 182.679ms 6.089ms 0.039ms 0.227x
+Texture2D<RGBA32F>.Sample(bilinear) linear: 182.764ms 6.092ms 0.037ms 0.227x
+Texture2D<RGBA32F>.Sample(bilinear) random: 270.850ms 9.028ms 0.067ms 0.153x
+```
+
 ### NVidia Ampere (RTX 3090)
 ```
 Buffer<R8>.Load uniform: 0.691ms 15.067x
@@ -1211,6 +1496,148 @@ Texture2D<RGBA32F>.Sample(bilinear) random: 74.230ms 0.140x
 **NVIDIA Ampere** results (ratios) of most common load/sample operations look similar to Turing.
 
 **Sampler ratios (NEW!):** New tests for sampler ratios show that Ampere has half rate bilinear RG32F and quarter rate bilinear RGBA32F. Nearest filtering is full rate, except for RGBA32F which is half rate (similar to RGBA32F texture loads). In Turing and Ampere RGBA32/float4 buffer loads are full rate.
+
+### NVidia Ampere (RTX 3060) Dx12+Dxc
+```markdown
+Buffer<R8>.Load uniform: 19.301ms 0.643ms 0.001ms 1.493x
+Buffer<R8>.Load linear: 19.310ms 0.644ms 0.002ms 1.493x
+Buffer<R8>.Load random: 22.015ms 0.734ms 0.001ms 1.309x
+Buffer<RG8>.Load uniform: 19.656ms 0.655ms 0.052ms 1.466x
+Buffer<RG8>.Load linear: 19.562ms 0.652ms 0.035ms 1.473x
+Buffer<RG8>.Load random: 19.599ms 0.653ms 0.037ms 1.470x
+Buffer<RGBA8>.Load uniform: 20.206ms 0.674ms 0.001ms 1.426x
+Buffer<RGBA8>.Load linear: 20.247ms 0.675ms 0.001ms 1.423x
+Buffer<RGBA8>.Load random: 28.820ms 0.961ms 0.036ms 1.000x
+Buffer<R16f>.Load uniform: 19.200ms 0.640ms 0.001ms 1.501x
+Buffer<R16f>.Load linear: 19.360ms 0.645ms 0.002ms 1.489x
+Buffer<R16f>.Load random: 19.289ms 0.643ms 0.001ms 1.494x
+Buffer<RG16f>.Load uniform: 19.642ms 0.655ms 0.078ms 1.467x
+Buffer<RG16f>.Load linear: 19.385ms 0.646ms 0.000ms 1.487x
+Buffer<RG16f>.Load random: 28.574ms 0.952ms 0.003ms 1.009x
+Buffer<RGBA16f>.Load uniform: 20.290ms 0.676ms 0.001ms 1.420x
+Buffer<RGBA16f>.Load linear: 20.368ms 0.679ms 0.003ms 1.415x
+Buffer<RGBA16f>.Load random: 20.234ms 0.674ms 0.001ms 1.424x
+Buffer<R32f>.Load uniform: 19.200ms 0.640ms 0.001ms 1.501x
+Buffer<R32f>.Load linear: 19.365ms 0.645ms 0.002ms 1.488x
+Buffer<R32f>.Load random: 28.627ms 0.954ms 0.002ms 1.007x
+Buffer<RG32f>.Load uniform: 19.243ms 0.641ms 0.001ms 1.498x
+Buffer<RG32f>.Load linear: 19.273ms 0.642ms 0.004ms 1.495x
+Buffer<RG32f>.Load random: 19.234ms 0.641ms 0.002ms 1.498x
+Buffer<RGBA32f>.Load uniform: 38.357ms 1.279ms 0.040ms 0.751x
+Buffer<RGBA32f>.Load linear: 38.228ms 1.274ms 0.001ms 0.754x
+Buffer<RGBA32f>.Load random: 38.096ms 1.270ms 0.001ms 0.757x
+ByteAddressBuffer.Load uniform: 24.101ms 0.803ms 0.078ms 1.196x
+ByteAddressBuffer.Load linear: 26.086ms 0.870ms 0.000ms 1.105x
+ByteAddressBuffer.Load random: 24.122ms 0.804ms 0.052ms 1.195x
+ByteAddressBuffer.Load2 uniform: 28.951ms 0.965ms 0.086ms 0.996x
+ByteAddressBuffer.Load2 linear: 29.716ms 0.991ms 0.085ms 0.970x
+ByteAddressBuffer.Load2 random: 27.587ms 0.920ms 0.102ms 1.045x
+ByteAddressBuffer.Load3 uniform: 32.907ms 1.097ms 0.130ms 0.876x
+ByteAddressBuffer.Load3 linear: 35.248ms 1.175ms 0.141ms 0.818x
+ByteAddressBuffer.Load3 random: 33.923ms 1.131ms 0.001ms 0.850x
+ByteAddressBuffer.Load4 uniform: 38.487ms 1.283ms 0.062ms 0.749x
+ByteAddressBuffer.Load4 linear: 49.946ms 1.665ms 0.113ms 0.577x
+ByteAddressBuffer.Load4 random: 38.990ms 1.300ms 0.093ms 0.739x
+ByteAddressBuffer.Load2 unaligned uniform: 29.002ms 0.967ms 0.069ms 0.994x
+ByteAddressBuffer.Load2 unaligned linear: 29.620ms 0.987ms 0.088ms 0.973x
+ByteAddressBuffer.Load2 unaligned random: 27.663ms 0.922ms 0.097ms 1.042x
+ByteAddressBuffer.Load4 unaligned uniform: 39.116ms 1.304ms 0.101ms 0.737x
+ByteAddressBuffer.Load4 unaligned linear: 48.755ms 1.625ms 0.081ms 0.591x
+ByteAddressBuffer.Load4 unaligned random: 38.488ms 1.283ms 0.078ms 0.749x
+StructuredBuffer<float>.Load uniform: 17.312ms 0.577ms 0.033ms 1.665x
+StructuredBuffer<float>.Load linear: 22.315ms 0.744ms 0.001ms 1.292x
+StructuredBuffer<float>.Load random: 22.470ms 0.749ms 0.001ms 1.283x
+StructuredBuffer<float2>.Load uniform: 18.260ms 0.609ms 0.001ms 1.578x
+StructuredBuffer<float2>.Load linear: 22.315ms 0.744ms 0.001ms 1.292x
+StructuredBuffer<float2>.Load random: 22.369ms 0.746ms 0.000ms 1.288x
+StructuredBuffer<float4>.Load uniform: 20.777ms 0.693ms 0.001ms 1.387x
+StructuredBuffer<float4>.Load linear: 22.985ms 0.766ms 0.047ms 1.254x
+StructuredBuffer<float4>.Load random: 22.442ms 0.748ms 0.001ms 1.284x
+cbuffer{float4} load uniform: 26.342ms 0.878ms 0.052ms 1.094x
+cbuffer{float4} load linear: 884.881ms 29.496ms 0.233ms 0.033x
+cbuffer{float4} load random: 568.427ms 18.948ms 0.177ms 0.051x
+Texture2D<R8>.Load uniform: 20.487ms 0.683ms 0.001ms 1.407x
+Texture2D<R8>.Load linear: 20.420ms 0.681ms 0.001ms 1.411x
+Texture2D<R8>.Load random: 20.442ms 0.681ms 0.002ms 1.410x
+Texture2D<RG8>.Load uniform: 20.385ms 0.679ms 0.001ms 1.414x
+Texture2D<RG8>.Load linear: 20.358ms 0.679ms 0.002ms 1.416x
+Texture2D<RG8>.Load random: 20.539ms 0.685ms 0.001ms 1.403x
+Texture2D<RGBA8>.Load uniform: 21.413ms 0.714ms 0.000ms 1.346x
+Texture2D<RGBA8>.Load linear: 29.704ms 0.990ms 0.002ms 0.970x
+Texture2D<RGBA8>.Load random: 40.703ms 1.357ms 0.089ms 0.708x
+Texture2D<R16F>.Load uniform: 20.507ms 0.684ms 0.001ms 1.405x
+Texture2D<R16F>.Load linear: 20.424ms 0.681ms 0.001ms 1.411x
+Texture2D<R16F>.Load random: 20.470ms 0.682ms 0.002ms 1.408x
+Texture2D<RG16F>.Load uniform: 20.440ms 0.681ms 0.000ms 1.410x
+Texture2D<RG16F>.Load linear: 29.577ms 0.986ms 0.000ms 0.974x
+Texture2D<RG16F>.Load random: 40.110ms 1.337ms 0.001ms 0.719x
+Texture2D<RGBA16F>.Load uniform: 21.624ms 0.721ms 0.001ms 1.333x
+Texture2D<RGBA16F>.Load linear: 54.502ms 1.817ms 0.005ms 0.529x
+Texture2D<RGBA16F>.Load random: 80.639ms 2.688ms 0.009ms 0.357x
+Texture2D<R32F>.Load uniform: 20.586ms 0.686ms 0.001ms 1.400x
+Texture2D<R32F>.Load linear: 29.941ms 0.998ms 0.004ms 0.963x
+Texture2D<R32F>.Load random: 40.446ms 1.348ms 0.044ms 0.713x
+Texture2D<RG32F>.Load uniform: 20.643ms 0.688ms 0.001ms 1.396x
+Texture2D<RG32F>.Load linear: 54.445ms 1.815ms 0.002ms 0.529x
+Texture2D<RG32F>.Load random: 80.666ms 2.689ms 0.005ms 0.357x
+Texture2D<RGBA32F>.Load uniform: 40.736ms 1.358ms 0.000ms 0.707x
+Texture2D<RGBA32F>.Load linear: 80.360ms 2.679ms 0.001ms 0.359x
+Texture2D<RGBA32F>.Load random: 80.761ms 2.692ms 0.048ms 0.357x
+Texture2D<R8>.Sample(nearest) uniform: 40.360ms 1.345ms 0.001ms 0.714x
+Texture2D<R8>.Sample(nearest) linear: 40.364ms 1.345ms 0.000ms 0.714x
+Texture2D<R8>.Sample(nearest) random: 40.397ms 1.347ms 0.002ms 0.713x
+Texture2D<RG8>.Sample(nearest) uniform: 40.372ms 1.346ms 0.001ms 0.714x
+Texture2D<RG8>.Sample(nearest) linear: 40.719ms 1.357ms 0.039ms 0.708x
+Texture2D<RG8>.Sample(nearest) random: 40.383ms 1.346ms 0.001ms 0.714x
+Texture2D<RGBA8>.Sample(nearest) uniform: 40.392ms 1.346ms 0.001ms 0.714x
+Texture2D<RGBA8>.Sample(nearest) linear: 40.717ms 1.357ms 0.036ms 0.708x
+Texture2D<RGBA8>.Sample(nearest) random: 40.848ms 1.362ms 0.061ms 0.706x
+Texture2D<R16F>.Sample(nearest) uniform: 40.351ms 1.345ms 0.001ms 0.714x
+Texture2D<R16F>.Sample(nearest) linear: 40.479ms 1.349ms 0.001ms 0.712x
+Texture2D<R16F>.Sample(nearest) random: 40.421ms 1.347ms 0.002ms 0.713x
+Texture2D<RG16F>.Sample(nearest) uniform: 40.566ms 1.352ms 0.036ms 0.710x
+Texture2D<RG16F>.Sample(nearest) linear: 41.461ms 1.382ms 0.101ms 0.695x
+Texture2D<RG16F>.Sample(nearest) random: 41.515ms 1.384ms 0.131ms 0.694x
+Texture2D<RGBA16F>.Sample(nearest) uniform: 40.834ms 1.361ms 0.055ms 0.706x
+Texture2D<RGBA16F>.Sample(nearest) linear: 40.519ms 1.351ms 0.002ms 0.711x
+Texture2D<RGBA16F>.Sample(nearest) random: 80.786ms 2.693ms 0.085ms 0.357x
+Texture2D<R32F>.Sample(nearest) uniform: 40.357ms 1.345ms 0.001ms 0.714x
+Texture2D<R32F>.Sample(nearest) linear: 40.712ms 1.357ms 0.042ms 0.708x
+Texture2D<R32F>.Sample(nearest) random: 40.478ms 1.349ms 0.000ms 0.712x
+Texture2D<RG32F>.Sample(nearest) uniform: 40.826ms 1.361ms 0.080ms 0.706x
+Texture2D<RG32F>.Sample(nearest) linear: 40.496ms 1.350ms 0.002ms 0.712x
+Texture2D<RG32F>.Sample(nearest) random: 80.505ms 2.683ms 0.009ms 0.358x
+Texture2D<RGBA32F>.Sample(bilinear) uniform: 80.725ms 2.691ms 0.004ms 0.357x
+Texture2D<RGBA32F>.Sample(nearest) linear: 80.660ms 2.689ms 0.077ms 0.357x
+Texture2D<RGBA32F>.Sample(nearest) random: 80.280ms 2.676ms 0.003ms 0.359x
+Texture2D<R8>.Sample(bilinear) uniform: 40.363ms 1.345ms 0.001ms 0.714x
+Texture2D<R8>.Sample(bilinear) linear: 40.565ms 1.352ms 0.035ms 0.710x
+Texture2D<R8>.Sample(bilinear) random: 40.389ms 1.346ms 0.002ms 0.714x
+Texture2D<RG8>.Sample(bilinear) uniform: 40.369ms 1.346ms 0.001ms 0.714x
+Texture2D<RG8>.Sample(bilinear) linear: 40.491ms 1.350ms 0.000ms 0.712x
+Texture2D<RG8>.Sample(bilinear) random: 40.825ms 1.361ms 0.080ms 0.706x
+Texture2D<RGBA8>.Sample(bilinear) uniform: 40.745ms 1.358ms 0.060ms 0.707x
+Texture2D<RGBA8>.Sample(bilinear) linear: 40.716ms 1.357ms 0.037ms 0.708x
+Texture2D<RGBA8>.Sample(bilinear) random: 40.715ms 1.357ms 0.036ms 0.708x
+Texture2D<R16F>.Sample(bilinear) uniform: 40.375ms 1.346ms 0.001ms 0.714x
+Texture2D<R16F>.Sample(bilinear) linear: 40.483ms 1.349ms 0.001ms 0.712x
+Texture2D<R16F>.Sample(bilinear) random: 40.405ms 1.347ms 0.002ms 0.713x
+Texture2D<RG16F>.Sample(bilinear) uniform: 40.382ms 1.346ms 0.002ms 0.714x
+Texture2D<RG16F>.Sample(bilinear) linear: 40.492ms 1.350ms 0.001ms 0.712x
+Texture2D<RG16F>.Sample(bilinear) random: 41.360ms 1.379ms 0.111ms 0.697x
+Texture2D<RGBA16F>.Sample(bilinear) uniform: 41.048ms 1.368ms 0.115ms 0.702x
+Texture2D<RGBA16F>.Sample(bilinear) linear: 40.525ms 1.351ms 0.002ms 0.711x
+Texture2D<RGBA16F>.Sample(bilinear) random: 80.319ms 2.677ms 0.002ms 0.359x
+Texture2D<R32F>.Sample(bilinear) uniform: 40.381ms 1.346ms 0.002ms 0.714x
+Texture2D<R32F>.Sample(bilinear) linear: 40.492ms 1.350ms 0.001ms 0.712x
+Texture2D<R32F>.Sample(bilinear) random: 40.483ms 1.349ms 0.001ms 0.712x
+Texture2D<RG32F>.Sample(bilinear) uniform: 40.393ms 1.346ms 0.003ms 0.714x
+Texture2D<RG32F>.Sample(bilinear) linear: 40.960ms 1.365ms 0.084ms 0.704x
+Texture2D<RG32F>.Sample(bilinear) random: 80.945ms 2.698ms 0.058ms 0.356x
+Texture2D<RGBA32F>.Sample(bilinear) uniform: 161.137ms 5.371ms 0.130ms 0.179x
+Texture2D<RGBA32F>.Sample(bilinear) linear: 160.190ms 5.340ms 0.001ms 0.180x
+Texture2D<RGBA32F>.Sample(bilinear) random: 245.120ms 8.171ms 0.001ms 0.118x
+``` 
 
 ### Intel Gen9 (HD 630 / i7 6700K)
 ```markdown
