@@ -8,11 +8,19 @@ cbuffer CB0 : register(b0)
 	LoadConstants loadConstants;
 };
 
-#define ROOT_SIGNATURE \
-	"DescriptorTable(" \
-		"CBV(b0, flags = DESCRIPTORS_VOLATILE | DATA_VOLATILE),"\
-		"SRV(t0, flags = DESCRIPTORS_VOLATILE | DATA_VOLATILE),"\
-		"UAV(u0, flags = DESCRIPTORS_VOLATILE | DATA_VOLATILE))"
+#if defined(ROOT_DESCRIPTOR)
+	#define ROOT_SIGNATURE \
+		"DescriptorTable(" \
+			"CBV(b0, flags = DESCRIPTORS_VOLATILE | DATA_VOLATILE),"\
+			"UAV(u0, flags = DESCRIPTORS_VOLATILE | DATA_VOLATILE)),"\
+		"SRV(t0, flags = DATA_VOLATILE)"
+#else
+	#define ROOT_SIGNATURE \
+		"DescriptorTable(" \
+			"CBV(b0, flags = DESCRIPTORS_VOLATILE | DATA_VOLATILE),"\
+			"SRV(t0, flags = DESCRIPTORS_VOLATILE | DATA_VOLATILE),"\
+			"UAV(u0, flags = DESCRIPTORS_VOLATILE | DATA_VOLATILE))"
+#endif
 
 #define THREAD_GROUP_SIZE 256
 

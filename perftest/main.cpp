@@ -84,17 +84,29 @@ int main(int argc, char *argv[])
 	ComputePSO shaderLoadTyped4dRandom = loadComputeShader(dx, "shaders/loadTyped4dRandom.cso");
 
 	ComputePSO shaderLoadRaw1dInvariant = loadComputeShader(dx, "shaders/loadRaw1dInvariant.cso");
+	ComputePSO shaderLoadRaw1dInvariantRoot = loadComputeShader(dx, "shaders/loadRaw1dInvariantRoot.cso");
 	ComputePSO shaderLoadRaw1dLinear = loadComputeShader(dx, "shaders/loadRaw1dLinear.cso");
+	ComputePSO shaderLoadRaw1dLinearRoot = loadComputeShader(dx, "shaders/loadRaw1dLinearRoot.cso");
 	ComputePSO shaderLoadRaw1dRandom = loadComputeShader(dx, "shaders/loadRaw1dRandom.cso");
+	ComputePSO shaderLoadRaw1dRandomRoot = loadComputeShader(dx, "shaders/loadRaw1dRandomRoot.cso");
 	ComputePSO shaderLoadRaw2dInvariant = loadComputeShader(dx, "shaders/loadRaw2dInvariant.cso");
+	ComputePSO shaderLoadRaw2dInvariantRoot = loadComputeShader(dx, "shaders/loadRaw2dInvariantRoot.cso");
 	ComputePSO shaderLoadRaw2dLinear = loadComputeShader(dx, "shaders/loadRaw2dLinear.cso");
+	ComputePSO shaderLoadRaw2dLinearRoot = loadComputeShader(dx, "shaders/loadRaw2dLinearRoot.cso");
 	ComputePSO shaderLoadRaw2dRandom = loadComputeShader(dx, "shaders/loadRaw2dRandom.cso");
+	ComputePSO shaderLoadRaw2dRandomRoot = loadComputeShader(dx, "shaders/loadRaw2dRandomRoot.cso");
 	ComputePSO shaderLoadRaw3dInvariant = loadComputeShader(dx, "shaders/loadRaw3dInvariant.cso");
+	ComputePSO shaderLoadRaw3dInvariantRoot = loadComputeShader(dx, "shaders/loadRaw3dInvariantRoot.cso");
 	ComputePSO shaderLoadRaw3dLinear = loadComputeShader(dx, "shaders/loadRaw3dLinear.cso");
+	ComputePSO shaderLoadRaw3dLinearRoot = loadComputeShader(dx, "shaders/loadRaw3dLinearRoot.cso");
 	ComputePSO shaderLoadRaw3dRandom = loadComputeShader(dx, "shaders/loadRaw3dRandom.cso");
+	ComputePSO shaderLoadRaw3dRandomRoot = loadComputeShader(dx, "shaders/loadRaw3dRandomRoot.cso");
 	ComputePSO shaderLoadRaw4dInvariant = loadComputeShader(dx, "shaders/loadRaw4dInvariant.cso");
+	ComputePSO shaderLoadRaw4dInvariantRoot = loadComputeShader(dx, "shaders/loadRaw4dInvariantRoot.cso");
 	ComputePSO shaderLoadRaw4dLinear = loadComputeShader(dx, "shaders/loadRaw4dLinear.cso");
+	ComputePSO shaderLoadRaw4dLinearRoot = loadComputeShader(dx, "shaders/loadRaw4dLinearRoot.cso");
 	ComputePSO shaderLoadRaw4dRandom = loadComputeShader(dx, "shaders/loadRaw4dRandom.cso");
+	ComputePSO shaderLoadRaw4dRandomRoot = loadComputeShader(dx, "shaders/loadRaw4dRandomRoot.cso");
 
 	ComputePSO shaderLoadTex1dInvariant = loadComputeShader(dx, "shaders/loadTex1dInvariant.cso");
 	ComputePSO shaderLoadTex1dLinear = loadComputeShader(dx, "shaders/loadTex1dLinear.cso");
@@ -119,16 +131,28 @@ int main(int argc, char *argv[])
 	ComputePSO shaderLoadConstant4dInvariant = loadComputeShader(dx, "shaders/loadConstant4dInvariant.cso");
 	ComputePSO shaderLoadConstant4dLinear = loadComputeShader(dx, "shaders/loadConstant4dLinear.cso");
 	ComputePSO shaderLoadConstant4dRandom = loadComputeShader(dx, "shaders/loadConstant4dRandom.cso");
+	ComputePSO shaderLoadConstant4dInvariantRoot = loadComputeShader(dx, "shaders/loadConstant4dInvariantRoot.cso");
+	ComputePSO shaderLoadConstant4dLinearRoot = loadComputeShader(dx, "shaders/loadConstant4dLinearRoot.cso");
+	ComputePSO shaderLoadConstant4dRandomRoot = loadComputeShader(dx, "shaders/loadConstant4dRandomRoot.cso");
 
 	ComputePSO shaderLoadStructured1dInvariant = loadComputeShader(dx, "shaders/loadStructured1dInvariant.cso");
+	ComputePSO shaderLoadStructured1dInvariantRoot = loadComputeShader(dx, "shaders/loadStructured1dInvariantRoot.cso");
 	ComputePSO shaderLoadStructured1dLinear = loadComputeShader(dx, "shaders/loadStructured1dLinear.cso");
+	ComputePSO shaderLoadStructured1dLinearRoot = loadComputeShader(dx, "shaders/loadStructured1dLinearRoot.cso");
 	ComputePSO shaderLoadStructured1dRandom = loadComputeShader(dx, "shaders/loadStructured1dRandom.cso");
+	ComputePSO shaderLoadStructured1dRandomRoot = loadComputeShader(dx, "shaders/loadStructured1dRandomRoot.cso");
 	ComputePSO shaderLoadStructured2dInvariant = loadComputeShader(dx, "shaders/loadStructured2dInvariant.cso");
+	ComputePSO shaderLoadStructured2dInvariantRoot = loadComputeShader(dx, "shaders/loadStructured2dInvariantRoot.cso");
 	ComputePSO shaderLoadStructured2dLinear = loadComputeShader(dx, "shaders/loadStructured2dLinear.cso");
+	ComputePSO shaderLoadStructured2dLinearRoot = loadComputeShader(dx, "shaders/loadStructured2dLinearRoot.cso");
 	ComputePSO shaderLoadStructured2dRandom = loadComputeShader(dx, "shaders/loadStructured2dRandom.cso");
+	ComputePSO shaderLoadStructured2dRandomRoot = loadComputeShader(dx, "shaders/loadStructured2dRandomRoot.cso");
 	ComputePSO shaderLoadStructured4dInvariant = loadComputeShader(dx, "shaders/loadStructured4dInvariant.cso");
+	ComputePSO shaderLoadStructured4dInvariantRoot = loadComputeShader(dx, "shaders/loadStructured4dInvariantRoot.cso");
 	ComputePSO shaderLoadStructured4dLinear = loadComputeShader(dx, "shaders/loadStructured4dLinear.cso");
+	ComputePSO shaderLoadStructured4dLinearRoot = loadComputeShader(dx, "shaders/loadStructured4dLinearRoot.cso");
 	ComputePSO shaderLoadStructured4dRandom = loadComputeShader(dx, "shaders/loadStructured4dRandom.cso");
+	ComputePSO shaderLoadStructured4dRandomRoot = loadComputeShader(dx, "shaders/loadStructured4dRandomRoot.cso");
 	printf(" Done\n");
 	// Create buffers and output UAV
 	ComPtr<ID3D12Resource> bufferOutput = dx.createBuffer(2048, 4);
@@ -287,6 +311,19 @@ int main(int argc, char *argv[])
 		bench.testCase(shaderLoadRaw4dLinear, loadCBUnaligned.Get(), byteAddressSRV, "ByteAddressBuffer.Load4 unaligned linear");
 		bench.testCase(shaderLoadRaw4dRandom, loadCBUnaligned.Get(), byteAddressSRV, "ByteAddressBuffer.Load4 unaligned random");
 
+		bench.testCase(shaderLoadRaw1dInvariantRoot, loadCB.Get(), byteAddressSRV, "ByteAddressBufferRoot.Load uniform");
+		bench.testCase(shaderLoadRaw1dLinearRoot, loadCB.Get(), byteAddressSRV, "ByteAddressBufferRoot.Load linear");
+		bench.testCase(shaderLoadRaw1dRandomRoot, loadCB.Get(), byteAddressSRV, "ByteAddressBufferRoot.Load random");
+		bench.testCase(shaderLoadRaw2dInvariantRoot, loadCB.Get(), byteAddressSRV, "ByteAddressBufferRoot.Load2 uniform");
+		bench.testCase(shaderLoadRaw2dLinearRoot, loadCB.Get(), byteAddressSRV, "ByteAddressBufferRoot.Load2 linear");
+		bench.testCase(shaderLoadRaw2dRandomRoot, loadCB.Get(), byteAddressSRV, "ByteAddressBufferRoot.Load2 random");
+		bench.testCase(shaderLoadRaw3dInvariantRoot, loadCB.Get(), byteAddressSRV, "ByteAddressBufferRoot.Load3 uniform");
+		bench.testCase(shaderLoadRaw3dLinearRoot, loadCB.Get(), byteAddressSRV, "ByteAddressBufferRoot.Load3 linear");
+		bench.testCase(shaderLoadRaw3dRandomRoot, loadCB.Get(), byteAddressSRV, "ByteAddressBufferRoot.Load3 random");
+		bench.testCase(shaderLoadRaw4dInvariantRoot, loadCB.Get(), byteAddressSRV, "ByteAddressBufferRoot.Load4 uniform");
+		bench.testCase(shaderLoadRaw4dLinearRoot, loadCB.Get(), byteAddressSRV, "ByteAddressBufferRoot.Load4 linear");
+		bench.testCase(shaderLoadRaw4dRandomRoot, loadCB.Get(), byteAddressSRV, "ByteAddressBufferRoot.Load4 random");
+
 		bench.testCase(shaderLoadStructured1dInvariant, loadCB.Get(), structuredSRV_R32F, "StructuredBuffer<float>.Load uniform");
 		bench.testCase(shaderLoadStructured1dLinear, loadCB.Get(), structuredSRV_R32F, "StructuredBuffer<float>.Load linear");
 		bench.testCase(shaderLoadStructured1dRandom, loadCB.Get(), structuredSRV_R32F, "StructuredBuffer<float>.Load random");
@@ -297,9 +334,23 @@ int main(int argc, char *argv[])
 		bench.testCase(shaderLoadStructured4dLinear, loadCB.Get(), structuredSRV_RGBA32F, "StructuredBuffer<float4>.Load linear");
 		bench.testCase(shaderLoadStructured4dRandom, loadCB.Get(), structuredSRV_RGBA32F, "StructuredBuffer<float4>.Load random");
 
+		bench.testCase(shaderLoadStructured1dInvariantRoot, loadCB.Get(), structuredSRV_R32F, "StructuredBufferRoot<float>.Load uniform");
+		bench.testCase(shaderLoadStructured1dLinearRoot, loadCB.Get(), structuredSRV_R32F, "StructuredBufferRoot<float>.Load linear");
+		bench.testCase(shaderLoadStructured1dRandomRoot, loadCB.Get(), structuredSRV_R32F, "StructuredBufferRoot<float>.Load random");
+		bench.testCase(shaderLoadStructured2dInvariantRoot, loadCB.Get(), structuredSRV_RG32F, "StructuredBufferRoot<float2>.Load uniform");
+		bench.testCase(shaderLoadStructured2dLinearRoot, loadCB.Get(), structuredSRV_RG32F, "StructuredBufferRoot<float2>.Load linear");
+		bench.testCase(shaderLoadStructured2dRandomRoot, loadCB.Get(), structuredSRV_RG32F, "StructuredBufferRoot<float2>.Load random");
+		bench.testCase(shaderLoadStructured4dInvariantRoot, loadCB.Get(), structuredSRV_RGBA32F, "StructuredBufferRoot<float4>.Load uniform");
+		bench.testCase(shaderLoadStructured4dLinearRoot, loadCB.Get(), structuredSRV_RGBA32F, "StructuredBufferRoot<float4>.Load linear");
+		bench.testCase(shaderLoadStructured4dRandomRoot, loadCB.Get(), structuredSRV_RGBA32F, "StructuredBufferRoot<float4>.Load random");
+
 		bench.testCase(shaderLoadConstant4dInvariant, loadWithArrayCB.Get(), {}, "cbuffer{float4} load uniform");
 		bench.testCase(shaderLoadConstant4dLinear, loadWithArrayCB.Get(), {}, "cbuffer{float4} load linear");
 		bench.testCase(shaderLoadConstant4dRandom, loadWithArrayCB.Get(), {}, "cbuffer{float4} load random");
+
+		bench.testCase(shaderLoadConstant4dInvariantRoot, loadWithArrayCB.Get(), {}, "cbuffer_root{float4} load uniform");
+		bench.testCase(shaderLoadConstant4dLinearRoot, loadWithArrayCB.Get(), {}, "cbuffer_root{float4} load linear");
+		bench.testCase(shaderLoadConstant4dRandomRoot, loadWithArrayCB.Get(), {}, "cbuffer_root{float4} load random");
 
 		bench.testCase(shaderLoadTex1dInvariant, loadCB.Get(), texSRV_R8, "Texture2D<R8>.Load uniform");
 		bench.testCase(shaderLoadTex1dLinear, loadCB.Get(), texSRV_R8, "Texture2D<R8>.Load linear");

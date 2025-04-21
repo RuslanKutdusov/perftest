@@ -226,6 +226,78 @@
     <FxCompile Include="sampleTex4dLinear.hlsl">
       <Filter>Shaders\texture_sample</Filter>
     </FxCompile>
+    <FxCompile Include="loadConstant4dInvariantRoot.hlsl">
+      <Filter>Shaders\constant_load</Filter>
+    </FxCompile>
+    <FxCompile Include="loadConstant4dLinearRoot.hlsl">
+      <Filter>Shaders\constant_load</Filter>
+    </FxCompile>
+    <FxCompile Include="loadConstant4dRandomRoot.hlsl">
+      <Filter>Shaders\constant_load</Filter>
+    </FxCompile>
+    <FxCompile Include="loadRaw1dInvariantRoot.hlsl">
+      <Filter>Shaders\raw_load</Filter>
+    </FxCompile>
+    <FxCompile Include="loadRaw1dLinearRoot.hlsl">
+      <Filter>Shaders\raw_load</Filter>
+    </FxCompile>
+    <FxCompile Include="loadRaw1dRandomRoot.hlsl">
+      <Filter>Shaders\raw_load</Filter>
+    </FxCompile>
+    <FxCompile Include="loadRaw2dInvariantRoot.hlsl">
+      <Filter>Shaders\raw_load</Filter>
+    </FxCompile>
+    <FxCompile Include="loadRaw2dLinearRoot.hlsl">
+      <Filter>Shaders\raw_load</Filter>
+    </FxCompile>
+    <FxCompile Include="loadRaw2dRandomRoot.hlsl">
+      <Filter>Shaders\raw_load</Filter>
+    </FxCompile>
+    <FxCompile Include="loadRaw3dInvariantRoot.hlsl">
+      <Filter>Shaders\raw_load</Filter>
+    </FxCompile>
+    <FxCompile Include="loadRaw3dLinearRoot.hlsl">
+      <Filter>Shaders\raw_load</Filter>
+    </FxCompile>
+    <FxCompile Include="loadRaw3dRandomRoot.hlsl">
+      <Filter>Shaders\raw_load</Filter>
+    </FxCompile>
+    <FxCompile Include="loadRaw4dInvariantRoot.hlsl">
+      <Filter>Shaders\raw_load</Filter>
+    </FxCompile>
+    <FxCompile Include="loadRaw4dLinearRoot.hlsl">
+      <Filter>Shaders\raw_load</Filter>
+    </FxCompile>
+    <FxCompile Include="loadRaw4dRandomRoot.hlsl">
+      <Filter>Shaders\raw_load</Filter>
+    </FxCompile>
+    <FxCompile Include="loadStructured1dInvariantRoot.hlsl">
+      <Filter>Shaders\structured_load</Filter>
+    </FxCompile>
+    <FxCompile Include="loadStructured1dLinearRoot.hlsl">
+      <Filter>Shaders\structured_load</Filter>
+    </FxCompile>
+    <FxCompile Include="loadStructured1dRandomRoot.hlsl">
+      <Filter>Shaders\structured_load</Filter>
+    </FxCompile>
+    <FxCompile Include="loadStructured2dInvariantRoot.hlsl">
+      <Filter>Shaders\structured_load</Filter>
+    </FxCompile>
+    <FxCompile Include="loadStructured2dLinearRoot.hlsl">
+      <Filter>Shaders\structured_load</Filter>
+    </FxCompile>
+    <FxCompile Include="loadStructured2dRandomRoot.hlsl">
+      <Filter>Shaders\structured_load</Filter>
+    </FxCompile>
+    <FxCompile Include="loadStructured4dInvariantRoot.hlsl">
+      <Filter>Shaders\structured_load</Filter>
+    </FxCompile>
+    <FxCompile Include="loadStructured4dLinearRoot.hlsl">
+      <Filter>Shaders\structured_load</Filter>
+    </FxCompile>
+    <FxCompile Include="loadStructured4dRandomRoot.hlsl">
+      <Filter>Shaders\structured_load</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="hash.hlsli">
